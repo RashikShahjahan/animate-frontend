@@ -33,7 +33,7 @@ interface fixAnimationRequest {
   error_message: string;
 }
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8080').replace(/\/?$/, '/');
 
 export const generateAnimation = async (inputText: AnimationRequest): Promise<AnimationResponse> => {
   try {
@@ -73,7 +73,9 @@ export const getAnimation = async (id: GetAnimationRequest): Promise<GetAnimatio
 
 export const fixAnimation = async (fixAnimationRequest: fixAnimationRequest): Promise<GetAnimationResponse> => {
   try {
-    const response = await axios.post(`${BASE_URL}/fix-animation`, fixAnimationRequest);
+    // Create a URL object to ensure proper URL construction
+    const url = new URL('fix-animation', BASE_URL);
+    const response = await axios.post(url.toString(), fixAnimationRequest);
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
