@@ -43,19 +43,8 @@ interface FixAnimationRequest {
   error_message: string;
 }
 
-const getBaseUrl = (): string => {
-  let url = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-  
-  // Ensure the URL has a protocol
-  if (!url.startsWith('http://') && !url.startsWith('https://')) {
-    url = `https://${url}`;
-  }
-  
-  // Remove trailing slash to avoid double slashes in API calls
-  return url.replace(/\/+$/, '');
-};
-
-const BASE_URL = getBaseUrl();
+// Use the exact BASE_URL from environment variable
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
 // Log the base URL for debugging
 console.log('BASE_URL:', BASE_URL);
