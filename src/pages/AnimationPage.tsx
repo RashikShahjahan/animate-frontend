@@ -52,7 +52,7 @@ function AnimationPage() {
     };
 
     loadAnimation();
-  }, [id, track]);
+  }, [id]);
 
   const handleCopyShareLink = () => {
     const shareUrl = `${window.location.origin}/animation/${id}`;
