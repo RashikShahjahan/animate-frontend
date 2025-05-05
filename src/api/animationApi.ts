@@ -33,7 +33,15 @@ interface fixAnimationRequest {
   error_message: string;
 }
 
-const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8080').replace(/\/?$/, '/');
+const getAbsoluteUrl = (url: string): string => {
+  // Ensure the URL has a protocol, otherwise it will be treated as relative
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    return `https://${url.replace(/^\/+/, '')}`;
+  }
+  return url;
+};
+
+const BASE_URL = getAbsoluteUrl((import.meta.env.VITE_API_URL || 'http://localhost:8080').replace(/\/?$/, '/'));
 
 export const generateAnimation = async (inputText: AnimationRequest): Promise<AnimationResponse> => {
   try {
