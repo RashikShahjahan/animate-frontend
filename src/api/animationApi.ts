@@ -41,7 +41,8 @@ const getAbsoluteUrl = (url: string): string => {
   return url;
 };
 
-const BASE_URL = getAbsoluteUrl((import.meta.env.VITE_API_URL || 'http://localhost:8080').replace(/\/?$/, '/'));
+// Remove the trailing slash to avoid double slashes in the API calls
+const BASE_URL = getAbsoluteUrl(import.meta.env.VITE_API_URL || 'http://localhost:8080').replace(/\/+$/, '');
 
 export const generateAnimation = async (inputText: AnimationRequest): Promise<AnimationResponse> => {
   try {
