@@ -46,7 +46,8 @@ const BASE_URL = getAbsoluteUrl(import.meta.env.VITE_API_URL || 'http://localhos
 
 export const generateAnimation = async (inputText: AnimationRequest): Promise<AnimationResponse> => {
   try {
-    const response = await axios.post(`${BASE_URL}/generate-animation`, inputText);
+    const url = new URL('generate-animation', BASE_URL);
+    const response = await axios.post(url.toString(), inputText);
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
@@ -58,7 +59,8 @@ export const generateAnimation = async (inputText: AnimationRequest): Promise<An
 
 export const saveAnimation = async (code: SaveAnimationRequest): Promise<SaveAnimationResponse> => {
   try {
-    const response = await axios.post(`${BASE_URL}/save-animation`, code);
+    const url = new URL('save-animation', BASE_URL);
+    const response = await axios.post(url.toString(), code);
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
@@ -70,7 +72,8 @@ export const saveAnimation = async (code: SaveAnimationRequest): Promise<SaveAni
 
 export const getAnimation = async (id: GetAnimationRequest): Promise<GetAnimationResponse> => {
   try {
-    const response = await axios.get(`${BASE_URL}/animation/${id.id}`);
+    const url = new URL(`animation/${id.id}`, BASE_URL);
+    const response = await axios.get(url.toString());
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
