@@ -1,6 +1,7 @@
 /**
  * API functions for animation generation
  */
+import axios from 'axios';
 
 interface AnimationRequest {
   description: string;
@@ -35,59 +36,49 @@ interface fixAnimationRequest {
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
 export const generateAnimation = async (inputText: AnimationRequest): Promise<AnimationResponse> => {
-  const response = await fetch(`${BASE_URL}/generate-animation`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(inputText),
-  });
-  
-  if (!response.ok) {
-    throw new Error(`API request failed with status ${response.status}`);
+  try {
+    const response = await axios.post(`${BASE_URL}/generate-animation`, inputText);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(`API request failed with status ${error.response?.status}`);
+    }
+    throw error;
   }
-  
-  return await response.json();
 }; 
 
 export const saveAnimation = async (code: SaveAnimationRequest): Promise<SaveAnimationResponse> => {
-  const response = await fetch(`${BASE_URL}/save-animation`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(code),
-  });
-
-  if (!response.ok) {
-    throw new Error(`API request failed with status ${response.status}`);
+  try {
+    const response = await axios.post(`${BASE_URL}/save-animation`, code);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(`API request failed with status ${error.response?.status}`);
+    }
+    throw error;
   }
-
-  return await response.json();
 };
 
 export const getAnimation = async (id: GetAnimationRequest): Promise<GetAnimationResponse> => {
-  const response = await fetch(`${BASE_URL}/animation/${id.id}`);
-
-  if (!response.ok) {
-    throw new Error(`API request failed with status ${response.status}`);
+  try {
+    const response = await axios.get(`${BASE_URL}/animation/${id.id}`);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(`API request failed with status ${error.response?.status}`);
+    }
+    throw error;
   }
-
-  return await response.json();
 };
 
 export const fixAnimation = async (fixAnimationRequest: fixAnimationRequest): Promise<GetAnimationResponse> => {
-  const response = await fetch(`${BASE_URL}/fix-animation`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(fixAnimationRequest),
-  });
-
-  if (!response.ok) {
-    throw new Error(`API request failed with status ${response.status}`);
+  try {
+    const response = await axios.post(`${BASE_URL}/fix-animation`, fixAnimationRequest);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(`API request failed with status ${error.response?.status}`);
+    }
+    throw error;
   }
-
-  return await response.json();
 };
