@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { fixAnimation, generateAnimation, saveAnimation } from '../api/animationApi';
 import AnimationCanvas from '../components/AnimationCanvas';
 import { useNavigate } from 'react-router-dom';
+import useTrackEvent from '../hooks/useTrackEvent';
 
 function HomePage() {
   const [inputText, setInputText] = useState('');
@@ -12,6 +13,12 @@ function HomePage() {
   const [copySuccess, setCopySuccess] = useState('');
   const [animationId, setAnimationId] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { track } = useTrackEvent();
+  
+  useEffect(() => {
+    // Track page visit
+    track('homepage_visit');
+  }, [track]);
   
   const handleCreateAnimation = async () => {
     if (inputText.trim() === '') return;
@@ -21,6 +28,9 @@ function HomePage() {
     setIsAnimationCreated(false);
     setAnimationId(null);
     
+    // Track animation creation attempt
+    track('animation_create_attempt', { prompt: inputText });
+    
     try {
       // Call the API endpoint with the user's input
       const data = await generateAnimation({ description: inputText });
@@ -29,12 +39,24 @@ function HomePage() {
       if (data.code) {
         setIsAnimationCreated(true);
         setCode(data.code);
+        
+        // Track successful animation creation
+        track('animation_created', { 
+          prompt: inputText,
+          success: true 
+        });
       } else {
         throw new Error('No sketch code received from API');
       }
     } catch (err) {
       let count = 0;
       let retrySuccess = false;
+      
+      // Track animation creation error
+      track('animation_creation_error', { 
+        prompt: inputText,
+        error: err instanceof Error ? err.message : 'Unknown error'
+      });
       
       // Try to fix the animation up to 3 times
       while (count < 3) {
@@ -44,6 +66,13 @@ function HomePage() {
             setIsAnimationCreated(true);
             setCode(data.code);
             retrySuccess = true;
+            
+            // Track successful animation fix
+            track('animation_fixed', { 
+              prompt: inputText,
+              attempts: count + 1
+            });
+            
             break;
           }
         } catch (fixErr) {
@@ -55,6 +84,12 @@ function HomePage() {
       // If all retry attempts failed, show a clear error message
       if (!retrySuccess) {
         setError('We tried multiple times but couldn\'t generate your animation. Please try again with a different description.');
+        
+        // Track all fixes failed
+        track('animation_fix_failed', { 
+          prompt: inputText,
+          attempts: count
+        });
       } else {
         setError('');
       }
@@ -72,13 +107,25 @@ function HomePage() {
 
   const handleSaveAndShare = async () => {
     try {
+      // Track share attempt
+      track('animation_share_attempt');
+      
       const response = await saveAnimation({ code });
       const id = response.id;
       setAnimationId(id);
+      
+      // Track successful share
+      track('animation_shared', { animationId: id });
+      
       // Navigate to the shared animation
       navigate(`/animation/${id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to share animation');
+      
+      // Track share error
+      track('animation_share_error', {
+        error: err instanceof Error ? err.message : 'Unknown error'
+      });
     }
   };
 

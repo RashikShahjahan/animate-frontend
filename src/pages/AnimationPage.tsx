@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getAnimation } from '../api/animationApi';
 import AnimationCanvas from '../components/AnimationCanvas';
+import useTrackEvent from '../hooks/useTrackEvent';
 
 function AnimationPage() {
   const { id } = useParams<{ id: string }>();
@@ -9,8 +10,14 @@ function AnimationPage() {
   const [error, setError] = useState('');
   const [code, setCode] = useState('');
   const [description, setDescription] = useState('');
+  const { track } = useTrackEvent();
 
   useEffect(() => {
+    // Track shared animation page view
+    if (id) {
+      track('shared_animation_view', { animationId: id });
+    }
+    
     const loadAnimation = async () => {
       if (!id) return;
       
@@ -23,19 +30,40 @@ function AnimationPage() {
         if (data.code) {
           setCode(data.code);
           setDescription(data.description || 'Check out this animation!');
+          
+          // Track successful animation load
+          track('animation_loaded', { 
+            animationId: id,
+            hasDescription: !!data.description
+          });
         } else {
           throw new Error('No animation code found');
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load animation');
         console.error(err);
+        
+        // Track animation load error
+        track('animation_load_error', { 
+          animationId: id,
+          error: err instanceof Error ? err.message : 'Unknown error'
+        });
       } finally {
         setIsLoading(false);
       }
     };
 
     loadAnimation();
-  }, [id]);
+  }, [id, track]);
+
+  const handleCopyShareLink = () => {
+    const shareUrl = `${window.location.origin}/animation/${id}`;
+    navigator.clipboard.writeText(shareUrl);
+    alert('URL copied to clipboard!');
+    
+    // Track share link copy
+    track('share_link_copied', { animationId: id });
+  };
 
   return (
     <div className="h-screen w-full flex justify-center items-stretch bg-gradient-to-br from-pink-50 to-pink-200 text-pink-800 font-sans overflow-hidden">
@@ -44,6 +72,7 @@ function AnimationPage() {
           <Link 
             to="/"
             className="flex items-center text-pink-400 hover:text-pink-600 transition-colors duration-200"
+            onClick={() => track('navigation_to_home')}
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
               <path d="M19 12H5M12 19l-7-7 7-7"></path>
@@ -76,11 +105,7 @@ function AnimationPage() {
         
         <div className="mt-4 flex justify-center">
           <button 
-            onClick={() => {
-              const shareUrl = `${window.location.origin}/animation/${id}`;
-              navigator.clipboard.writeText(shareUrl);
-              alert('URL copied to clipboard!');
-            }}
+            onClick={handleCopyShareLink}
             className="py-3 px-6 bg-pink-50 text-pink-400 text-[15px] font-semibold border-2 border-pink-200 rounded-lg cursor-pointer transition-all duration-200 hover:bg-pink-100 active:translate-y-0.5 w-48"
           >
             Copy Share Link
