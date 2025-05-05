@@ -9,7 +9,6 @@ function AnimationPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [code, setCode] = useState('');
-  const [description, setDescription] = useState('');
   const { track } = useTrackEvent();
 
   useEffect(() => {
@@ -29,7 +28,6 @@ function AnimationPage() {
         
         if (data.code) {
           setCode(data.code);
-          setDescription(data.description || 'Check out this animation!');
           
           // Track successful animation load
           track('animation_loaded', { 

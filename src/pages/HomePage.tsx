@@ -10,8 +10,6 @@ function HomePage() {
   const [error, setError] = useState('');
   const [isAnimationCreated, setIsAnimationCreated] = useState(false);
   const [code, setCode] = useState('');
-  const [copySuccess, setCopySuccess] = useState('');
-  const [animationId, setAnimationId] = useState<string | null>(null);
   const navigate = useNavigate();
   const { track } = useTrackEvent();
   
@@ -26,7 +24,6 @@ function HomePage() {
     setIsLoading(true);
     setError('');
     setIsAnimationCreated(false);
-    setAnimationId(null);
     
     // Track animation creation attempt
     track('animation_create_attempt', { prompt: inputText });
@@ -61,7 +58,7 @@ function HomePage() {
       // Try to fix the animation up to 3 times
       while (count < 3) {
         try {
-          const data = await fixAnimation(code, 'No sketch code received from API');
+          const data = await fixAnimation({ broken_code: code, error_message: err instanceof Error ? err.message : 'Unknown error' });
           if (data.code) {
             setIsAnimationCreated(true);
             setCode(data.code);
@@ -112,7 +109,6 @@ function HomePage() {
       
       const response = await saveAnimation({ code });
       const id = response.id;
-      setAnimationId(id);
       
       // Track successful share
       track('animation_shared', { animationId: id });
@@ -208,7 +204,6 @@ function HomePage() {
                     setInputText('');
                     setIsAnimationCreated(false);
                     setCode('');
-                    setAnimationId(null);
                     if (window.p5Instance) {
                       window.p5Instance.remove();
                     }
@@ -227,13 +222,7 @@ function HomePage() {
             </div>
         )}
         
-        {copySuccess && (
-          <div className="mt-2 text-center">
-            <span className="inline-block py-2 px-4 bg-green-100 text-green-600 text-sm font-medium rounded-md animate-fadeIn">
-              {copySuccess}
-            </span>
-          </div>
-        )}
+      
       </div>
     </div>
   );

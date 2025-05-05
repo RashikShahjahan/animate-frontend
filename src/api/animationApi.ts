@@ -76,13 +76,13 @@ export const getAnimation = async (id: GetAnimationRequest): Promise<GetAnimatio
   return await response.json();
 };
 
-export const fixAnimation = async (broken_code: string, error_message: string): Promise<GetAnimationResponse> => {
+export const fixAnimation = async (fixAnimationRequest: fixAnimationRequest): Promise<GetAnimationResponse> => {
   const response = await fetch(`${BASE_URL}/fix-animation`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ broken_code, error_message }),
+    body: JSON.stringify(fixAnimationRequest),
   });
 
   if (!response.ok) {
