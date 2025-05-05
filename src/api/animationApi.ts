@@ -6,12 +6,6 @@ import axios from 'axios';
 // Create a custom axios instance with logging
 const apiClient = axios.create();
 
-// Add a request interceptor to log requests
-apiClient.interceptors.request.use(config => {
-  console.log('Request URL:', config.url);
-  console.log('Request Method:', config.method);
-  return config;
-});
 
 interface AnimationRequest {
   description: string;
