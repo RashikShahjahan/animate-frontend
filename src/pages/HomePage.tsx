@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { fixAnimation, generateAnimation, saveAnimation } from '../api/animationApi';
 import AnimationCanvas from '../components/AnimationCanvas';
-import { useNavigate } from 'react-router-dom';
 import useTrackEvent from '../hooks/useTrackEvent';
 
 function HomePage() {
@@ -11,13 +10,12 @@ function HomePage() {
   const [isAnimationCreated, setIsAnimationCreated] = useState(false);
   const [code, setCode] = useState('');
   const [currentError, setCurrentError] = useState('');
-  const navigate = useNavigate();
   const { track } = useTrackEvent();
   
   useEffect(() => {
     // Track page visit
     track('homepage_visit');
-  }, [track]);
+  }, []);
   
   const handleCreateAnimation = async () => {
     if (inputText.trim() === '') return;
