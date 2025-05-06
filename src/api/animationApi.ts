@@ -3,13 +3,9 @@
  */
 import axios from 'axios';
 
-// Create a custom axios instance with logging
-const apiClient = axios.create({
-  timeout: 120000 // 2 minutes
-});
 
 // Add request interceptor for debugging
-apiClient.interceptors.request.use(
+axios.interceptors.request.use(
   (config) => {
     console.log(`API Request: ${config.method?.toUpperCase()} ${config.url}`);
     return config;
@@ -21,7 +17,7 @@ apiClient.interceptors.request.use(
 );
 
 // Add response interceptor for debugging
-apiClient.interceptors.response.use(
+axios.interceptors.response.use(
   (response) => {
     console.log(`API Response: ${response.status} from ${response.config.url}`);
     return response;
@@ -92,7 +88,7 @@ const handleApiError = (error: unknown) => {
 export const generateAnimation = async (inputText: AnimationRequest): Promise<AnimationResponse> => {
   try {
     const url = new URL('generate-animation', BASE_URL);
-    const response = await apiClient.post(url.toString(), inputText);
+    const response = await axios.post(url.toString(), inputText);
     
     if (!response.data || !response.data.code) {
       throw new Error('Invalid response: Missing code in the animation response');
@@ -107,7 +103,7 @@ export const generateAnimation = async (inputText: AnimationRequest): Promise<An
 export const saveAnimation = async (code: SaveAnimationRequest): Promise<SaveAnimationResponse> => {
   try {
     const url = new URL('save-animation', BASE_URL);
-    const response = await apiClient.post(url.toString(), code);
+    const response = await axios.post(url.toString(), code);
     
     if (!response.data || !response.data.id) {
       throw new Error('Invalid response: Missing ID in save response');
@@ -122,7 +118,7 @@ export const saveAnimation = async (code: SaveAnimationRequest): Promise<SaveAni
 export const getAnimation = async (id: GetAnimationRequest): Promise<GetAnimationResponse> => {
   try {
     const url = new URL(`animation/${id.id}`, BASE_URL);
-    const response = await apiClient.get(url.toString());
+    const response = await axios.get(url.toString());
     
     if (!response.data || !response.data.code) {
       throw new Error('Invalid response: Missing code in the animation data');
@@ -147,7 +143,7 @@ export const fixAnimation = async (request: FixAnimationRequest): Promise<Animat
     });
     
     const url = new URL('fix-animation', BASE_URL);
-    const response = await apiClient.post(url.toString(), request);
+    const response = await axios.post(url.toString(), request);
     
     if (!response.data || !response.data.code) {
       throw new Error('Invalid response: Missing code in the fix response');
