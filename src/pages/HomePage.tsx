@@ -10,6 +10,7 @@ function HomePage() {
   const [error, setError] = useState('');
   const [isAnimationCreated, setIsAnimationCreated] = useState(false);
   const [code, setCode] = useState('');
+  const [currentError, setCurrentError] = useState('');
   const navigate = useNavigate();
   const { track } = useTrackEvent();
   
@@ -23,6 +24,7 @@ function HomePage() {
     
     setIsLoading(true);
     setError('');
+    setCurrentError('');
     setIsAnimationCreated(false);
     
     // Track animation creation attempt
@@ -46,53 +48,76 @@ function HomePage() {
         throw new Error('No sketch code received from API');
       }
     } catch (err) {
-      let count = 0;
-      let retrySuccess = false;
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      console.error('Animation generation error:', errorMessage);
+      
+      setCurrentError(errorMessage);
       
       // Track animation creation error
       track('animation_creation_error', { 
         prompt: inputText,
-        error: err instanceof Error ? err.message : 'Unknown error'
+        error: errorMessage
       });
       
-      // Try to fix the animation up to 3 times
-      while (count < 3) {
-        try {
-          const data = await fixAnimation({ broken_code: code, error_message: err instanceof Error ? err.message : 'Unknown error' });
-          if (data.code) {
-            setIsAnimationCreated(true);
-            setCode(data.code);
-            retrySuccess = true;
-            
-            // Track successful animation fix
-            track('animation_fixed', { 
-              prompt: inputText,
-              attempts: count + 1
-            });
-            
-            break;
-          }
-        } catch (fixErr) {
-          console.error('Fix attempt failed:', fixErr);
-        }
-        count++;
-      }
-      
-      // If all retry attempts failed, show a clear error message
-      if (!retrySuccess) {
-        setError('We tried multiple times but couldn\'t generate your animation. Please try again with a different description.');
-        
-        // Track all fixes failed
-        track('animation_fix_failed', { 
-          prompt: inputText,
-          attempts: count
-        });
+      // Only attempt to fix if we have some code to fix
+      if (code) {
+        await attemptFixAnimation(errorMessage);
       } else {
-        setError('');
+        setError('Failed to generate animation. Please try again with a different description.');
       }
-      console.error(err);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const attemptFixAnimation = async (errorMessage: string) => {
+    let count = 0;
+    let retrySuccess = false;
+    
+    // Try to fix the animation up to 3 times
+    while (count < 3 && !retrySuccess) {
+      try {
+        console.log(`Attempting to fix animation (attempt ${count + 1})`);
+        console.log('Broken code:', code);
+        console.log('Error message:', errorMessage);
+        
+        const data = await fixAnimation({
+          broken_code: code,
+          error_message: errorMessage
+        });
+        
+        if (data && data.code) {
+          setIsAnimationCreated(true);
+          setCode(data.code);
+          setError('');
+          retrySuccess = true;
+          
+          // Track successful animation fix
+          track('animation_fixed', { 
+            prompt: inputText,
+            attempts: count + 1
+          });
+          
+          break;
+        } else {
+          throw new Error('No fixed code received from API');
+        }
+      } catch (fixErr) {
+        const fixErrorMsg = fixErr instanceof Error ? fixErr.message : 'Unknown error';
+        console.error(`Fix attempt ${count + 1} failed:`, fixErrorMsg);
+        count++;
+      }
+    }
+    
+    // If all retry attempts failed, show a clear error message
+    if (!retrySuccess) {
+      setError('We tried multiple times but couldn\'t generate your animation. Please try again with a different description.');
+      
+      // Track all fixes failed
+      track('animation_fix_failed', { 
+        prompt: inputText,
+        attempts: count
+      });
     }
   };
 
@@ -176,6 +201,9 @@ function HomePage() {
               onClick={() => {
                 setInputText('');
                 setError('');
+                setCurrentError('');
+                setCode('');
+                setIsAnimationCreated(false);
                 if (window.p5Instance) {
                   window.p5Instance.remove();
                 }
@@ -192,7 +220,7 @@ function HomePage() {
             isLoading={isLoading}
             isAnimationCreated={isAnimationCreated}
             code={code}
-            error={error}
+            error={currentError}
           />
         )}
         
@@ -204,6 +232,7 @@ function HomePage() {
                     setInputText('');
                     setIsAnimationCreated(false);
                     setCode('');
+                    setCurrentError('');
                     if (window.p5Instance) {
                       window.p5Instance.remove();
                     }

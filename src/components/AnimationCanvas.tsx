@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { runP5Sketch } from '../utils/p5Utils';
 
 interface AnimationCanvasProps {
@@ -15,12 +15,18 @@ const AnimationCanvas: React.FC<AnimationCanvasProps> = ({
   error 
 }) => {
   const sketchContainerRef = useRef<HTMLDivElement>(null);
+  const [canvasError, setCanvasError] = useState<string>('');
   
   // Clean up any previous p5 instance when component unmounts or before creating a new one
   useEffect(() => {
     return () => {
       if (window.p5Instance) {
-        window.p5Instance.remove();
+        try {
+          window.p5Instance.remove();
+          window.p5Instance = null;
+        } catch (e) {
+          console.warn('Error cleaning up p5 instance:', e);
+        }
       }
     };
   }, []);
@@ -28,10 +34,17 @@ const AnimationCanvas: React.FC<AnimationCanvasProps> = ({
   // Run sketch when code changes
   useEffect(() => {
     if (code && sketchContainerRef.current && isAnimationCreated) {
-      const setError = (errorMsg: string) => {
-        console.error(errorMsg);
-      };
-      runP5Sketch(code, sketchContainerRef.current, setError);
+      setCanvasError('');
+      try {
+        runP5Sketch(code, sketchContainerRef.current, (errorMsg: string) => {
+          console.error('Animation error:', errorMsg);
+          setCanvasError(errorMsg);
+        });
+      } catch (e) {
+        const errorMessage = e instanceof Error ? e.message : String(e);
+        console.error('Error running animation:', errorMessage);
+        setCanvasError(errorMessage);
+      }
     }
   }, [code, isAnimationCreated]);
 
@@ -49,7 +62,7 @@ const AnimationCanvas: React.FC<AnimationCanvasProps> = ({
           <p>Generating your animation...</p>
         </div>
       )}
-      {!isLoading && !isAnimationCreated && !error && (
+      {!isLoading && !isAnimationCreated && !error && !canvasError && (
         <div className="flex flex-col items-center justify-center text-pink-400 h-full w-full absolute top-0 left-0 p-8 text-center">
           <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#aabdd9" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="mb-6 opacity-60">
             <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path>
@@ -58,6 +71,16 @@ const AnimationCanvas: React.FC<AnimationCanvasProps> = ({
             <path d="M8 13h8a4 4 0 0 1 0 8H8a4 4 0 0 1 0-8z"></path>
           </svg>
           <p className="text-base max-w-[300px] leading-relaxed">Type a description and click Create to generate an animation</p>
+        </div>
+      )}
+      {(error || canvasError) && !isLoading && (
+        <div className="flex flex-col items-center gap-2.5 text-pink-600 bg-pink-100 py-4 px-5 rounded-lg m-4 text-center shadow-sm animate-slideIn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <span className="font-medium text-base">{canvasError || error}</span>
         </div>
       )}
       <div ref={sketchContainerRef} className="flex justify-center items-center relative z-10 w-full h-full"></div>

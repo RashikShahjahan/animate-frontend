@@ -9,7 +9,12 @@ declare global {
 export const runP5Sketch = (sketchCode: string, container: HTMLDivElement, onError: (error: string) => void): void => {
   // First clean up any existing p5 instance
   if (window.p5Instance) {
-    window.p5Instance.remove();
+    try {
+      window.p5Instance.remove();
+    } catch (e) {
+      console.warn('Error while removing previous p5 instance:', e);
+    }
+    window.p5Instance = null;
   }
   
   // Clear the container
@@ -23,8 +28,13 @@ export const runP5Sketch = (sketchCode: string, container: HTMLDivElement, onErr
     container.id = containerId;
     
     // Get container dimensions
-    const containerWidth = container.clientWidth;
-    const containerHeight = container.clientHeight;
+    const containerWidth = container.clientWidth || 400;
+    const containerHeight = container.clientHeight || 300;
+    
+    // Make sure we have valid dimensions
+    if (containerWidth <= 0 || containerHeight <= 0) {
+      console.warn('Container has invalid dimensions, using defaults');
+    }
     
     // Extract the p5 function from the sketch code
     // The API returns code in format: new p5(function(p) { ... });
@@ -41,8 +51,14 @@ export const runP5Sketch = (sketchCode: string, container: HTMLDivElement, onErr
     scriptElement.textContent = `
       try {
         if (window.p5Instance) {
-          window.p5Instance.remove();
+          try {
+            window.p5Instance.remove();
+          } catch (e) {
+            console.warn('Error removing existing p5 instance:', e);
+          }
+          window.p5Instance = null;
         }
+        
         window.p5Instance = new window.p5(function(p) {
           // Store original canvas dimensions
           let originalWidth, originalHeight;
@@ -51,34 +67,61 @@ export const runP5Sketch = (sketchCode: string, container: HTMLDivElement, onErr
           const originalSetup = p.setup || function() {};
           
           p.setup = function() {
-            originalSetup.call(p);
-            
-            // If createCanvas wasn't called in the original setup
-            if (!p.canvas) {
-              p.createCanvas(${containerWidth}, ${containerHeight});
-              originalWidth = ${containerWidth};
-              originalHeight = ${containerHeight};
-            } else {
-              // Store original dimensions before resizing
-              originalWidth = p.width || ${containerWidth};
-              originalHeight = p.height || ${containerHeight};
+            try {
+              originalSetup.call(p);
               
-              // We don't force resize here to preserve original animation dimensions
-              // just store the original values
+              // If createCanvas wasn't called in the original setup
+              if (!p.canvas) {
+                p.createCanvas(${containerWidth}, ${containerHeight});
+                originalWidth = ${containerWidth};
+                originalHeight = ${containerHeight};
+              } else {
+                // Store original dimensions before resizing
+                originalWidth = p.width || ${containerWidth};
+                originalHeight = p.height || ${containerHeight};
+              }
+            } catch (setupError) {
+              console.error('Error in p5.js setup:', setupError);
             }
           };
           
           // Add window resize handling
           p.windowResized = function() {
-            const container = document.getElementById('${containerId}');
-            if (container && originalWidth && originalHeight) {
-              // Maintain aspect ratio
-              const containerWidth = container.clientWidth;
-              const containerHeight = container.clientHeight;
-              
-              // Don't resize the canvas - the CSS will handle the proper display
-              // This allows the animation to maintain its original dimensions
+            try {
+              const container = document.getElementById('${containerId}');
+              if (container && originalWidth && originalHeight) {
+                // Maintain aspect ratio
+                const containerWidth = container.clientWidth;
+                const containerHeight = container.clientHeight;
+              }
+            } catch (resizeError) {
+              console.warn('Error in windowResized:', resizeError);
             }
+          };
+          
+          // Add error handling to preload
+          const originalPreload = p.preload || function() {};
+          p.preload = function() {
+            try {
+              originalPreload.call(p);
+            } catch (preloadError) {
+              console.error('Error in p5.js preload:', preloadError);
+            }
+          };
+          
+          // Handle external resources with CORS errors
+          p.httpGet = function(url, datatype, callback) {
+            // Check if URL is from domains that might have CORS issues
+            const corsProblematicDomains = ['placekitten.com', 'imgur.com', 'giphy.com'];
+            
+            // If the URL contains a problematic domain, use a CORS proxy
+            if (corsProblematicDomains.some(domain => url.includes(domain))) {
+              console.warn('Using CORS-safe alternative for external resource:', url);
+              // Use a CORS-friendly placeholder instead
+              url = 'https://via.placeholder.com/800x600';
+            }
+            
+            return p._httpGet(url, datatype, callback);
           };
           
           ${sketchBody}
@@ -91,11 +134,17 @@ export const runP5Sketch = (sketchCode: string, container: HTMLDivElement, onErr
     container.appendChild(scriptElement);
     
     // Add window resize event listener
-    window.addEventListener('resize', () => {
+    const resizeHandler = () => {
       if (window.p5Instance && typeof window.p5Instance.windowResized === 'function') {
-        window.p5Instance.windowResized();
+        try {
+          window.p5Instance.windowResized();
+        } catch (e) {
+          console.warn('Error in resize handler:', e);
+        }
       }
-    });
+    };
+    
+    window.addEventListener('resize', resizeHandler);
     
     // Check if canvas was created
     setTimeout(() => {
@@ -112,6 +161,13 @@ export const runP5Sketch = (sketchCode: string, container: HTMLDivElement, onErr
         canvas.style.margin = '0 auto';
       }
     }, 1000);
+    
+    // Handle script load errors
+    scriptElement.onerror = (event) => {
+      console.error('Script loading error:', event);
+      onError('Failed to load animation script');
+    };
+    
   } catch (err) {
     console.error('Error running p5.js sketch:', err);
     onError('Error running the animation code: ' + (err instanceof Error ? err.message : String(err)));
