@@ -5,7 +5,7 @@ import axios from 'axios';
 
 // Create a custom axios instance with logging
 const apiClient = axios.create({
-  timeout: 30000 // 30 second timeout
+  timeout: 120000 // 2 minutes
 });
 
 // Add request interceptor for debugging
