@@ -9,6 +9,7 @@ function AnimationPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [code, setCode] = useState('');
+  const [description, setDescription] = useState('');
   const { track } = useTrackEvent();
 
   useEffect(() => {
@@ -28,6 +29,9 @@ function AnimationPage() {
         
         if (data.code) {
           setCode(data.code);
+          if (data.description) {
+            setDescription(data.description);
+          }
           
           // Track successful animation load
           track('animation_loaded', { 
@@ -91,6 +95,13 @@ function AnimationPage() {
               <line x1="12" y1="16" x2="12.01" y2="16"></line>
             </svg>
             <span>{error}</span>
+          </div>
+        )}
+        
+        {description && (
+          <div className="mb-4 p-4 bg-pink-50 rounded-lg text-pink-800 text-sm">
+            <h3 className="font-medium mb-1">Description:</h3>
+            <p>{description}</p>
           </div>
         )}
         

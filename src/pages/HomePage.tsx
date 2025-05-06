@@ -132,7 +132,7 @@ function HomePage() {
       // Track share attempt
       track('animation_share_attempt');
       
-      const response = await saveAnimation({ code });
+      const response = await saveAnimation({ code, description: inputText });
       const id = response.id;
       
       // Copy the link to clipboard instead of navigating

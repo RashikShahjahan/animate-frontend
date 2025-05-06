@@ -37,6 +37,7 @@ interface AnimationResponse {
 }
 
 interface SaveAnimationRequest {
+  description: string;
   code: string;
 }
 
