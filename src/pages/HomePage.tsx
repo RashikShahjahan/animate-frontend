@@ -135,11 +135,15 @@ function HomePage() {
       const response = await saveAnimation({ code });
       const id = response.id;
       
+      // Copy the link to clipboard instead of navigating
+      const shareUrl = `${window.location.origin}/animation/${id}`;
+      await navigator.clipboard.writeText(shareUrl);
+      
+      // Show a success message
+      alert('Animation link copied to clipboard!');
+      
       // Track successful share
       track('animation_shared', { animationId: id });
-      
-      // Navigate to the shared animation
-      navigate(`/animation/${id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to share animation');
       
@@ -245,7 +249,7 @@ function HomePage() {
                   onClick={handleSaveAndShare}
                   className="py-3 px-6 bg-pink-50 text-pink-400 text-[15px] font-semibold border-2 border-pink-200 rounded-lg cursor-pointer transition-all duration-200 hover:bg-pink-100 active:translate-y-0.5 w-48"
                 >
-                  Share
+                  Copy Link
                 </button>
               </div>
             </div>
