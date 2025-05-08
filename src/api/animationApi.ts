@@ -2,6 +2,19 @@
  * API functions for animation generation
  */
 import axios from 'axios';
+import {
+  AnimationRequest,
+  AnimationResponse,
+  SaveAnimationRequest,
+  SaveAnimationResponse,
+  GetAnimationRequest,
+  GetAnimationResponse,
+  FixAnimationRequest,
+  RegisterRequest,
+  RegisterResponse,
+  LoginRequest,
+  LoginResponse
+} from '../types/apiTypes';
 
 
 // Add request interceptor for debugging
@@ -27,37 +40,6 @@ axios.interceptors.response.use(
     return Promise.reject(error);
   }
 );
-
-interface AnimationRequest {
-  description: string;
-}
-
-interface AnimationResponse {
-  code: string;
-}
-
-interface SaveAnimationRequest {
-  description: string;
-  code: string;
-}
-
-interface SaveAnimationResponse {
-  id: string;
-}
-
-interface GetAnimationResponse {
-  code: string;
-  description?: string;
-} 
-
-interface GetAnimationRequest {
-  id: string;
-}
-
-interface FixAnimationRequest {
-  broken_code: string;
-  error_message: string;
-}
 
 // Use the exact BASE_URL from environment variable
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
@@ -148,6 +130,37 @@ export const fixAnimation = async (request: FixAnimationRequest): Promise<Animat
     
     if (!response.data || !response.data.code) {
       throw new Error('Invalid response: Missing code in the fix response');
+    }
+    
+    return response.data;
+  } catch (error) {
+    return handleApiError(error);
+  }
+};
+
+export const registerUser = async (data: RegisterRequest): Promise<RegisterResponse> => {
+  try {
+    const url = new URL('register', BASE_URL);
+    const response = await axios.post(url.toString(), data);
+
+
+    if (!response.data || !response.data.id) {
+      throw new Error('Invalid response: Missing ID in register response');
+    }
+
+    return response.data;
+  } catch (error) {
+    return handleApiError(error);
+  }
+};
+
+export const loginUser = async (data: LoginRequest): Promise<LoginResponse> => {
+  try {
+    const url = new URL('login', BASE_URL);
+    const response = await axios.post(url.toString(), data);
+
+    if (!response.data || !response.data.token) {
+      throw new Error('Invalid response: Missing token in login response');
     }
     
     return response.data;
