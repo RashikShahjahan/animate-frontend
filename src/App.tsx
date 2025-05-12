@@ -27,11 +27,7 @@ function App() {
           />
           <Route 
             path="/animation/:id" 
-            element={
-              <ProtectedRoute>
-                <AnimationPage />
-              </ProtectedRoute>
-            } 
+            element={<AnimationPage />}
           />
           
           {/* Unprotected Routes */}
