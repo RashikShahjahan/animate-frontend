@@ -25,11 +25,7 @@ function App() {
               </ProtectedRoute>
             } 
           />
-          <Route 
-            path="/animation/:id" 
-            element={<AnimationPage />}
-          />
-          
+ 
           {/* Unprotected Routes */}
           <Route 
             path="/register" 
@@ -48,7 +44,11 @@ function App() {
             } 
           />
           
-
+          <Route 
+            path="/animation/:id" 
+            element={<AnimationPage />}
+          />
+          
           
           <Route
             path="/"
