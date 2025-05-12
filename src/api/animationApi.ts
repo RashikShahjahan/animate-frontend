@@ -17,8 +17,7 @@ import {
   LoginResponse,
   ClaudeRequest,
   ClaudeResponse,
-  ClaudeMessage,
-  ClaudeContent
+
 } from '../types/schemas';
 
 import {
@@ -28,7 +27,6 @@ import {
   SaveAnimationResponseSchema,
   GetAnimationRequestSchema,
   GetAnimationResponseSchema,
-  FixAnimationRequestSchema,
   RegisterRequestSchema,
   RegisterResponseSchema,
   LoginRequestSchema,
@@ -41,9 +39,11 @@ import {
 axios.interceptors.request.use(
   (config) => {
     console.log(`API Request: ${config.method?.toUpperCase()} ${config.url}`);
-    // Add auth token to all requests
+    // Add auth token to all requests except for specific endpoints
     const token = localStorage.getItem('auth_token');
-    if (token) {
+    const isPublicEndpoint = config.url?.includes('/animation/');
+    
+    if (token && !isPublicEndpoint) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
