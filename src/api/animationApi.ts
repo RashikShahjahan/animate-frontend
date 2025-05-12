@@ -2,12 +2,50 @@
  * API functions for animation generation
  */
 import axios from 'axios';
+import { isZodError, formatZodError } from '../utils/validation';
+import {
+  AnimationRequest,
+  AnimationResponse,
+  SaveAnimationRequest,
+  SaveAnimationResponse,
+  GetAnimationRequest,
+  GetAnimationResponse,
+  FixAnimationRequest,
+  RegisterRequest,
+  RegisterResponse,
+  LoginRequest,
+  LoginResponse,
+  ClaudeRequest,
+  ClaudeResponse,
+  ClaudeMessage,
+  ClaudeContent
+} from '../types/schemas';
 
+import {
+  AnimationRequestSchema,
+  AnimationResponseSchema,
+  SaveAnimationRequestSchema,
+  SaveAnimationResponseSchema,
+  GetAnimationRequestSchema,
+  GetAnimationResponseSchema,
+  FixAnimationRequestSchema,
+  RegisterRequestSchema,
+  RegisterResponseSchema,
+  LoginRequestSchema,
+  LoginResponseSchema,
+  ClaudeRequestSchema,
+  ClaudeResponseSchema
+} from '../types/schemas';
 
 // Add request interceptor for debugging
 axios.interceptors.request.use(
   (config) => {
     console.log(`API Request: ${config.method?.toUpperCase()} ${config.url}`);
+    // Add auth token to all requests
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   },
   (error) => {
@@ -28,37 +66,6 @@ axios.interceptors.response.use(
   }
 );
 
-interface AnimationRequest {
-  description: string;
-}
-
-interface AnimationResponse {
-  code: string;
-}
-
-interface SaveAnimationRequest {
-  description: string;
-  code: string;
-}
-
-interface SaveAnimationResponse {
-  id: string;
-}
-
-interface GetAnimationResponse {
-  code: string;
-  description?: string;
-} 
-
-interface GetAnimationRequest {
-  id: string;
-}
-
-interface FixAnimationRequest {
-  broken_code: string;
-  error_message: string;
-}
-
 // Use the exact BASE_URL from environment variable
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
@@ -67,6 +74,13 @@ console.log('BASE_URL:', BASE_URL);
 
 // Helper function to handle errors consistently
 const handleApiError = (error: unknown) => {
+  // Handle Zod validation errors
+  if (isZodError(error)) {
+    const errorMessage = formatZodError(error);
+    console.error('Validation error:', errorMessage);
+    throw new Error(`Validation failed: ${errorMessage}`);
+  }
+  
   if (axios.isAxiosError(error)) {
     const status = error.response?.status;
     const errorData = error.response?.data;
@@ -88,14 +102,14 @@ const handleApiError = (error: unknown) => {
 
 export const generateAnimation = async (inputText: AnimationRequest): Promise<AnimationResponse> => {
   try {
+    // Validate request data
+    const validatedData = AnimationRequestSchema.parse(inputText);
+    
     const url = new URL('generate-animation', BASE_URL);
-    const response = await axios.post(url.toString(), inputText);
+    const response = await axios.post(url.toString(), validatedData);
     
-    if (!response.data || !response.data.code) {
-      throw new Error('Invalid response: Missing code in the animation response');
-    }
-    
-    return response.data;
+    // Validate response data
+    return AnimationResponseSchema.parse(response.data);
   } catch (error) {
     return handleApiError(error);
   }
@@ -103,14 +117,14 @@ export const generateAnimation = async (inputText: AnimationRequest): Promise<An
 
 export const saveAnimation = async (code: SaveAnimationRequest): Promise<SaveAnimationResponse> => {
   try {
+    // Validate request data
+    const validatedData = SaveAnimationRequestSchema.parse(code);
+    
     const url = new URL('save-animation', BASE_URL);
-    const response = await axios.post(url.toString(), code);
+    const response = await axios.post(url.toString(), validatedData);
     
-    if (!response.data || !response.data.id) {
-      throw new Error('Invalid response: Missing ID in save response');
-    }
-    
-    return response.data;
+    // Validate response data
+    return SaveAnimationResponseSchema.parse(response.data);
   } catch (error) {
     return handleApiError(error);
   }
@@ -118,39 +132,60 @@ export const saveAnimation = async (code: SaveAnimationRequest): Promise<SaveAni
 
 export const getAnimation = async (id: GetAnimationRequest): Promise<GetAnimationResponse> => {
   try {
-    const url = new URL(`animation/${id.id}`, BASE_URL);
+    // Validate request data
+    const validatedData = GetAnimationRequestSchema.parse(id);
+    
+    const url = new URL(`animation/${validatedData.id}`, BASE_URL);
     const response = await axios.get(url.toString());
     
-    if (!response.data || !response.data.code) {
-      throw new Error('Invalid response: Missing code in the animation data');
-    }
-    
-    return response.data;
+    // Validate response data
+    return GetAnimationResponseSchema.parse(response.data);
   } catch (error) {
     return handleApiError(error);
   }
 };
 
-export const fixAnimation = async (request: FixAnimationRequest): Promise<AnimationResponse> => {
+
+export const registerUser = async (data: RegisterRequest): Promise<RegisterResponse> => {
   try {
     // Validate request data
-    if (!request.broken_code) {
-      throw new Error('No broken code provided for fixing');
-    }
+    const validatedData = RegisterRequestSchema.parse(data);
     
-    console.log('Sending fix request:', {
-      error_message: request.error_message,
-      code_length: request.broken_code.length
-    });
+    const url = new URL('register', BASE_URL);
+    const response = await axios.post(url.toString(), validatedData);
+
+    // Validate response data
+    return RegisterResponseSchema.parse(response.data);
+  } catch (error) {
+    return handleApiError(error);
+  }
+};
+
+export const loginUser = async (data: LoginRequest): Promise<LoginResponse> => {
+  try {
+    // Validate request data
+    const validatedData = LoginRequestSchema.parse(data);
     
-    const url = new URL('fix-animation', BASE_URL);
-    const response = await axios.post(url.toString(), request);
+    const url = new URL('login', BASE_URL);
+    const response = await axios.post(url.toString(), validatedData);
+
+    // Validate response data
+    return LoginResponseSchema.parse(response.data);
+  } catch (error) {
+    return handleApiError(error);
+  }
+};
+
+export const sendClaudeRequest = async (request: ClaudeRequest): Promise<ClaudeResponse> => {
+  try {
+    // Validate request data
+    const validatedData = ClaudeRequestSchema.parse(request);
     
-    if (!response.data || !response.data.code) {
-      throw new Error('Invalid response: Missing code in the fix response');
-    }
+    const url = new URL('claude', BASE_URL);
+    const response = await axios.post(url.toString(), validatedData);
     
-    return response.data;
+    // Validate response data
+    return ClaudeResponseSchema.parse(response.data);
   } catch (error) {
     return handleApiError(error);
   }

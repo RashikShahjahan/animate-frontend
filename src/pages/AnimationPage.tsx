@@ -3,6 +3,8 @@ import { useParams, Link } from 'react-router-dom';
 import { getAnimation } from '../api/animationApi';
 import AnimationCanvas from '../components/AnimationCanvas';
 import useTrackEvent from '../hooks/useTrackEvent';
+import Navbar from '../components/Navbar';
+import { useAuth } from '../context/AuthContext';
 
 function AnimationPage() {
   const { id } = useParams<{ id: string }>();
@@ -11,6 +13,7 @@ function AnimationPage() {
   const [code, setCode] = useState('');
   const [description, setDescription] = useState('');
   const { track } = useTrackEvent();
+  const { isAuthenticated, user } = useAuth();
 
   useEffect(() => {
     // Track shared animation page view
@@ -36,7 +39,8 @@ function AnimationPage() {
           // Track successful animation load
           track('animation_loaded', { 
             animationId: id,
-            hasDescription: !!data.description
+            hasDescription: !!data.description,
+            isAuthenticated: isAuthenticated
           });
         } else {
           throw new Error('No animation code found');
@@ -56,7 +60,7 @@ function AnimationPage() {
     };
 
     loadAnimation();
-  }, [id]);
+  }, [id, isAuthenticated]);
 
   const handleCopyShareLink = () => {
     const shareUrl = `${window.location.origin}/animation/${id}`;
@@ -68,57 +72,79 @@ function AnimationPage() {
   };
 
   return (
-    <div className="h-screen w-full flex justify-center items-stretch bg-gradient-to-br from-pink-50 to-pink-200 text-pink-800 font-sans overflow-hidden">
-      <div className="max-w-full w-full h-full p-4 bg-white flex flex-col">
-        <div className="flex justify-between w-full mb-2">
-          <Link 
-            to="/"
-            className="flex items-center text-pink-400 hover:text-pink-600 transition-colors duration-200"
-            onClick={() => track('navigation_to_home')}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
-              <path d="M19 12H5M12 19l-7-7 7-7"></path>
-            </svg>
-            Back to Home
-          </Link>
-          <h1 className="text-2xl font-bold text-pink-800 relative inline-block mb-4">
-            Shared Animation
-          </h1>
-          <div className="w-[100px]"></div> {/* Spacer for centering */}
-        </div>
-        
-        {error && (
-          <div className="flex items-center gap-2.5 text-pink-600 bg-pink-100 py-3 px-4 rounded-lg mb-4 text-left text-sm border-l-4 border-pink-600 shadow-sm animate-slideIn">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="12" y1="8" x2="12" y2="12"></line>
-              <line x1="12" y1="16" x2="12.01" y2="16"></line>
-            </svg>
-            <span>{error}</span>
+    <div className="h-screen w-full flex flex-col bg-gradient-to-br from-pink-50 to-pink-200 text-pink-800 font-sans overflow-hidden">
+      <Navbar />
+      <div className="flex-grow flex justify-center items-stretch overflow-auto">
+        <div className="max-w-full w-full h-full p-4 bg-white flex flex-col">
+          <div className="flex justify-between w-full mb-2">
+            <Link 
+              to="/home"
+              className="flex items-center text-pink-400 hover:text-pink-600 transition-colors duration-200"
+              onClick={() => track('navigation_to_home')}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                <path d="M19 12H5M12 19l-7-7 7-7"></path>
+              </svg>
+              Back to Home
+            </Link>
+            <h1 className="text-2xl font-bold text-pink-800 relative inline-block mb-4">
+              Shared Animation
+            </h1>
+            <div className="w-[100px]"></div> {/* Spacer for centering */}
           </div>
-        )}
-        
-        {description && (
-          <div className="mb-4 p-4 bg-pink-50 rounded-lg text-pink-800 text-sm">
-            <h3 className="font-medium mb-1">Description:</h3>
-            <p>{description}</p>
+          
+          {isAuthenticated && user && (
+            <div className="mb-4 p-3 bg-pink-50 rounded-lg text-pink-600 text-sm flex items-center justify-between">
+              <div>
+                <span className="font-medium">Viewing as:</span> {user.username || user.email}
+              </div>
+              <div className="text-xs text-pink-400">
+                User ID: {user.id.substring(0, 8)}...
+              </div>
+            </div>
+          )}
+          
+          {error && (
+            <div className="flex items-center gap-2.5 text-pink-600 bg-pink-100 py-3 px-4 rounded-lg mb-4 text-left text-sm border-l-4 border-pink-600 shadow-sm animate-slideIn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <span>{error}</span>
+            </div>
+          )}
+          
+          {description && (
+            <div className="mb-4 p-4 bg-pink-50 rounded-lg text-pink-800 text-sm">
+              <h3 className="font-medium mb-1">Description:</h3>
+              <p>{description}</p>
+            </div>
+          )}
+          
+          <AnimationCanvas 
+            isLoading={isLoading}
+            isAnimationCreated={!isLoading && code !== ''}
+            code={code}
+            error={error}
+          />
+          
+          <div className="mt-4 flex justify-center gap-3">
+            <button 
+              onClick={handleCopyShareLink}
+              className="py-3 px-6 bg-pink-50 text-pink-400 text-[15px] font-semibold border-2 border-pink-200 rounded-lg cursor-pointer transition-all duration-200 hover:bg-pink-100 active:translate-y-0.5 w-48"
+            >
+              Copy Share Link
+            </button>
+            {isAuthenticated && (
+              <button 
+                onClick={() => track('authenticated_action', { userId: user?.id, actionType: 'save_to_favorites' })}
+                className="py-3 px-6 bg-pink-100 text-pink-600 text-[15px] font-semibold border-2 border-pink-300 rounded-lg cursor-pointer transition-all duration-200 hover:bg-pink-200 active:translate-y-0.5 w-48"
+              >
+                Save to Favorites
+              </button>
+            )}
           </div>
-        )}
-        
-        <AnimationCanvas 
-          isLoading={isLoading}
-          isAnimationCreated={!isLoading && code !== ''}
-          code={code}
-          error={error}
-        />
-        
-        <div className="mt-4 flex justify-center">
-          <button 
-            onClick={handleCopyShareLink}
-            className="py-3 px-6 bg-pink-50 text-pink-400 text-[15px] font-semibold border-2 border-pink-200 rounded-lg cursor-pointer transition-all duration-200 hover:bg-pink-100 active:translate-y-0.5 w-48"
-          >
-            Copy Share Link
-          </button>
         </div>
       </div>
     </div>
