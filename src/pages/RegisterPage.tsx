@@ -2,28 +2,46 @@ import { useForm } from 'react-hook-form';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { registerUser } from '../api/animationApi';
+import { useAuth } from '../context/AuthContext';
 
 type FormValues = {
   email: string;
   password: string;
   confirmPassword: string;
+  username: string;
 };
 
 function RegisterPage() {
   const { register, handleSubmit, formState: { errors }, watch } = useForm<FormValues>();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const { login } = useAuth();
 
   const onSubmit = async (data: FormValues) => {
     setIsLoading(true);
     setError('');
     
     try {
-      // Mock API call - replace with actual registration logic
-      registerUser({ username: data.email, email: data.email, password: data.password });
+      // Validation is handled by the form, so we just need to check that passwords match
+      if (data.password !== data.confirmPassword) {
+        setError("Passwords don't match");
+        setIsLoading(false);
+        return;
+      }
+      
+      // Only send email, username and password to the API
+      const response = await registerUser({ 
+        email: data.email, 
+        password: data.password,
+        username: data.username || data.email
+      });
       console.log('Registration data:', data);
-      // Redirect to home page after successful registration
-      window.location.href = '/home';
+      // Use auth context to store user data and token
+      login(response.token, {
+        id: response.user.id,
+        email: response.user.email,
+        username: response.user.username
+      });
     } catch (err) {
       setError('Registration failed. Please try again.');
     } finally {
@@ -55,6 +73,20 @@ function RegisterPage() {
         )}
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div>
+            <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+            <input
+              id="username"
+              type="text"
+              placeholder="yourname"
+              className={`w-full p-[14px] text-base border-2 ${errors.username ? 'border-red-300' : 'border-pink-200'} rounded-lg outline-none transition-all duration-200 shadow-sm focus:border-pink-400 focus:shadow-[0_0_0_3px_rgba(255,102,179,0.15)]`}
+              {...register('username', { 
+                required: 'Username is required'
+              })}
+            />
+            {errors.username && <p className="mt-1 text-sm text-red-500">{errors.username.message}</p>}
+          </div>
+          
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
             <input

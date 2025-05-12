@@ -17,7 +17,7 @@ const AnimationCanvas: React.FC<AnimationCanvasProps> = ({
   const sketchContainerRef = useRef<HTMLDivElement>(null);
   const [canvasError, setCanvasError] = useState<string>('');
   
-  // Clean up any previous p5 instance when component unmounts or before creating a new one
+  // Clean up any previous p5 instance when component unmounts
   useEffect(() => {
     return () => {
       if (window.p5Instance) {
@@ -34,8 +34,13 @@ const AnimationCanvas: React.FC<AnimationCanvasProps> = ({
   // Run sketch when code changes
   useEffect(() => {
     if (code && sketchContainerRef.current && isAnimationCreated) {
+      // Reset any previous errors
       setCanvasError('');
+      
       try {
+        console.log('Running animation with code length:', code.length);
+        
+        // Run the p5 sketch
         runP5Sketch(code, sketchContainerRef.current, (errorMsg: string) => {
           console.error('Animation error:', errorMsg);
           setCanvasError(errorMsg);
@@ -49,7 +54,7 @@ const AnimationCanvas: React.FC<AnimationCanvasProps> = ({
   }, [code, isAnimationCreated]);
 
   return (
-    <div className={`flex-1 flex justify-center items-center mt-2 relative overflow-hidden min-h-[300px] max-w-full bg-pink-50 ${
+    <div className={`flex-1 flex justify-center items-center mt-2 relative overflow-hidden min-h-[400px] max-w-full bg-pink-50 ${
       isLoading ? 'border border-pink-200 rounded-lg' : ''
     } ${
       isAnimationCreated 
@@ -83,7 +88,11 @@ const AnimationCanvas: React.FC<AnimationCanvasProps> = ({
           <span className="font-medium text-base">{canvasError || error}</span>
         </div>
       )}
-      <div ref={sketchContainerRef} className="flex justify-center items-center relative z-10 w-full h-full"></div>
+      <div 
+        ref={sketchContainerRef} 
+        className="flex justify-center items-center relative z-10 w-full h-full"
+        data-testid="animation-container"
+      ></div>
     </div>
   );
 };

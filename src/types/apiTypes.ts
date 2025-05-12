@@ -8,6 +8,7 @@ export interface AnimationRequest {
 
 export interface AnimationResponse {
   code: string;
+  error?: string;
 }
 
 export interface SaveAnimationRequest {
@@ -21,16 +22,19 @@ export interface SaveAnimationResponse {
 
 export interface GetAnimationResponse {
   code: string;
-  description?: string;
+  description: string;
 } 
 
 export interface GetAnimationRequest {
   id: string;
 }
 
-export interface FixAnimationRequest {
-  broken_code: string;
-  error_message: string;
+
+
+export interface User {
+  id: string;
+  username: string;
+  email: string;
 }
 
 export interface RegisterRequest {
@@ -40,7 +44,8 @@ export interface RegisterRequest {
 }
 
 export interface RegisterResponse {
-  id: string;
+  token: string;
+  user: User;
 }
 
 export interface LoginRequest {
@@ -50,9 +55,6 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   token: string;
-  user: {
-    id: string;
-    username: string;
-    email: string;
-  }
-} 
+  user: User;
+}
+

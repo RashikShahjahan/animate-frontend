@@ -1,7 +1,8 @@
 import { useForm } from 'react-hook-form';
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { loginUser } from '../api/animationApi';
+import { useAuth } from '../context/AuthContext';
 
 type FormValues = {
   email: string;
@@ -12,17 +13,24 @@ function LoginPage() {
   const { register, handleSubmit, formState: { errors } } = useForm<FormValues>();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const { login } = useAuth();
+  const navigate = useNavigate();
 
   const onSubmit = async (data: FormValues) => {
     setIsLoading(true);
     setError('');
     
     try {
-      // Mock API call - replace with actual login logic
-      loginUser(data);
+      const response = await loginUser(data);
       console.log('Login data:', data);
-      // Redirect to home page after successful login
-      window.location.href = '/home';
+      // Use auth context to store user data and token
+      login(response.token, {
+        id: response.user.id,
+        email: response.user.email,
+        username: response.user.username
+      });
+      // Navigate to home page after successful login
+      navigate('/home');
     } catch (err) {
       setError('Login failed. Please check your credentials and try again.');
     } finally {

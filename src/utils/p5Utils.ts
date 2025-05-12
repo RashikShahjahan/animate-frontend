@@ -6,6 +6,21 @@ declare global {
   }
 }
 
+/**
+ * Helper function to fix common syntax errors in p5 sketch code
+ */
+export const preprocessP5Code = (code: string): string => {
+  // Fix common syntax errors
+  let fixedCode = code;
+  
+  // Fix missing closing brackets in array access with property assignment
+  // e.g., array[i.property = value; -> array[i].property = value;
+  fixedCode = fixedCode.replace(/(\w+)\[(\w+)\.(\w+)\s*(\+|-|\*|\/|)=\s*([^;]+);/g, 
+                               "$1[$2].$3 $4= $5;");
+  
+  return fixedCode;
+};
+
 export const runP5Sketch = (sketchCode: string, container: HTMLDivElement, onError: (error: string) => void): void => {
   // First clean up any existing p5 instance
   if (window.p5Instance) {
@@ -23,6 +38,9 @@ export const runP5Sketch = (sketchCode: string, container: HTMLDivElement, onErr
   }
   
   try {
+    // Preprocess sketch code to fix common syntax errors
+    sketchCode = preprocessP5Code(sketchCode);
+    
     // Assign a unique ID to the container
     const containerId = 'p5-sketch-container-' + Date.now();
     container.id = containerId;
