@@ -28,14 +28,12 @@ export const GetAnimationRequestSchema = z.object({
 });
 
 export const GetAnimationResponseSchema = z.object({
+  id: z.string().min(1, 'Animation ID is required'),
   code: z.string().min(1, 'Animation code is required'),
   description: z.string()
 });
 
-export const FixAnimationRequestSchema = z.object({
-  broken_code: z.string().min(1, 'Broken code is required'),
-  error_message: z.string().min(1, 'Error message is required')
-});
+export const GetAnimationFeedResponseSchema = z.array(GetAnimationResponseSchema);
 
 // Authentication schemas
 export const RegisterRequestSchema = z.object({
@@ -96,7 +94,7 @@ export type SaveAnimationRequest = z.infer<typeof SaveAnimationRequestSchema>;
 export type SaveAnimationResponse = z.infer<typeof SaveAnimationResponseSchema>;
 export type GetAnimationRequest = z.infer<typeof GetAnimationRequestSchema>;
 export type GetAnimationResponse = z.infer<typeof GetAnimationResponseSchema>;
-export type FixAnimationRequest = z.infer<typeof FixAnimationRequestSchema>;
+export type GetAnimationFeedResponse = z.infer<typeof GetAnimationFeedResponseSchema>;
 export type RegisterRequest = z.infer<typeof RegisterRequestSchema>;
 export type RegisterResponse = z.infer<typeof RegisterResponseSchema>;
 export type LoginRequest = z.infer<typeof LoginRequestSchema>;

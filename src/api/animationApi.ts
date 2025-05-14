@@ -10,13 +10,12 @@ import {
   SaveAnimationResponse,
   GetAnimationRequest,
   GetAnimationResponse,
-  FixAnimationRequest,
+  GetAnimationFeedResponse,
   RegisterRequest,
   RegisterResponse,
   LoginRequest,
   LoginResponse,
-  ClaudeRequest,
-  ClaudeResponse,
+
 
 } from '../types/schemas';
 
@@ -27,12 +26,11 @@ import {
   SaveAnimationResponseSchema,
   GetAnimationRequestSchema,
   GetAnimationResponseSchema,
+  GetAnimationFeedResponseSchema,
   RegisterRequestSchema,
   RegisterResponseSchema,
   LoginRequestSchema,
   LoginResponseSchema,
-  ClaudeRequestSchema,
-  ClaudeResponseSchema
 } from '../types/schemas';
 
 // Add request interceptor for debugging
@@ -41,7 +39,7 @@ axios.interceptors.request.use(
     console.log(`API Request: ${config.method?.toUpperCase()} ${config.url}`);
     // Add auth token to all requests except for specific endpoints
     const token = localStorage.getItem('auth_token');
-    const isPublicEndpoint = config.url?.includes('/animation/');
+    const isPublicEndpoint = config.url?.includes('/animation/') || config.url?.includes('/feed');
     
     if (token && !isPublicEndpoint) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -176,16 +174,18 @@ export const loginUser = async (data: LoginRequest): Promise<LoginResponse> => {
   }
 };
 
-export const sendClaudeRequest = async (request: ClaudeRequest): Promise<ClaudeResponse> => {
+/**
+ * Fetches a single animation from the feed
+ * The backend handles randomization
+ */
+export const getFeed = async (): Promise<GetAnimationResponse> => {
   try {
-    // Validate request data
-    const validatedData = ClaudeRequestSchema.parse(request);
+    const url = new URL(`feed`, BASE_URL);
+    const response = await axios.get(url.toString());
     
-    const url = new URL('claude', BASE_URL);
-    const response = await axios.post(url.toString(), validatedData);
+    // Validate response data for animation feed
+    return GetAnimationResponseSchema.parse(response.data);
     
-    // Validate response data
-    return ClaudeResponseSchema.parse(response.data);
   } catch (error) {
     return handleApiError(error);
   }

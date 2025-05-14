@@ -4,6 +4,7 @@ import HomePage from './pages/HomePage';
 import AnimationPage from './pages/AnimationPage';
 import RegisterPage from './pages/RegisterPage';
 import LoginPage from './pages/LoginPage';
+import FeedPage from './pages/FeedPage';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import UnprotectedRoute from './components/UnprotectedRoute';
@@ -45,10 +46,16 @@ function App() {
           />
           
           <Route 
+          
             path="/animation/:id" 
             element={<AnimationPage />}
           />
-          
+
+          {/* Public routes accessible to all users */}
+          <Route 
+            path="/feed"
+            element={<FeedPage />}
+          />
           
           <Route
             path="/"
