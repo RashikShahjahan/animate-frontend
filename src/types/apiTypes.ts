@@ -21,6 +21,7 @@ export interface SaveAnimationResponse {
 }
 
 export interface GetAnimationResponse {
+  id: string;
   code: string;
   description: string;
 } 
