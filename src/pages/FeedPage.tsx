@@ -107,16 +107,19 @@ const FeedPage: React.FC = () => {
         
         {!isLoading && !error && currentAnimation && (
           <div className="w-full max-w-md bg-white rounded-lg shadow-lg overflow-hidden">
-            <div className="h-[400px] p-2">
-              <AnimationCanvas 
-                isLoading={false}
-                isAnimationCreated={true}
-                code={currentAnimation.code}
-                error=""
-              />
+            <div className="h-[320px] p-2 bg-white overflow-hidden">
+              <div className="h-full w-full">
+                <AnimationCanvas 
+                  isLoading={false}
+                  isAnimationCreated={true}
+                  code={currentAnimation.code}
+                  error=""
+                  className="!min-h-0 h-full"
+                />
+              </div>
             </div>
             
-            <div className="p-4 bg-white">
+            <div className="p-4 bg-white border-t border-gray-100">
               <h3 className="font-medium text-lg text-pink-800 mb-2">
                 {currentAnimation.description}
               </h3>

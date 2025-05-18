@@ -6,13 +6,15 @@ interface AnimationCanvasProps {
   isAnimationCreated: boolean;
   code: string;
   error: string;
+  className?: string;
 }
 
 const AnimationCanvas: React.FC<AnimationCanvasProps> = ({ 
   isLoading, 
   isAnimationCreated, 
   code, 
-  error 
+  error,
+  className = ''
 }) => {
   const sketchContainerRef = useRef<HTMLDivElement>(null);
   const [canvasError, setCanvasError] = useState<string>('');
@@ -60,7 +62,7 @@ const AnimationCanvas: React.FC<AnimationCanvasProps> = ({
       isAnimationCreated 
         ? 'p-0 shadow-md rounded-lg' 
         : 'border border-pink-200 p-2.5 rounded-lg'
-    }`}>
+    } ${className}`}>
       {isLoading && (
         <div className="flex flex-col items-center justify-center h-full w-full absolute top-0 left-0 text-pink-400">
           <div className="w-[50px] h-[50px] border-4 border-pink-400/20 rounded-full border-t-pink-400 animate-spin mb-5"></div>

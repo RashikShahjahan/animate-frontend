@@ -93,16 +93,6 @@ function AnimationPage() {
             <div className="w-[100px]"></div> {/* Spacer for centering */}
           </div>
           
-          {isAuthenticated && user && (
-            <div className="mb-4 p-3 bg-pink-50 rounded-lg text-pink-600 text-sm flex items-center justify-between">
-              <div>
-                <span className="font-medium">Viewing as:</span> {user.username || user.email}
-              </div>
-              <div className="text-xs text-pink-400">
-                User ID: {user.id.substring(0, 8)}...
-              </div>
-            </div>
-          )}
           
           {error && (
             <div className="flex items-center gap-2.5 text-pink-600 bg-pink-100 py-3 px-4 rounded-lg mb-4 text-left text-sm border-l-4 border-pink-600 shadow-sm animate-slideIn">
@@ -117,7 +107,7 @@ function AnimationPage() {
           
           {description && (
             <div className="mb-4 p-4 bg-pink-50 rounded-lg text-pink-800 text-sm">
-              <h3 className="font-medium mb-1">Description:</h3>
+              <h3 className="font-medium mb-1">Prompt:</h3>
               <p>{description}</p>
             </div>
           )}
@@ -136,14 +126,6 @@ function AnimationPage() {
             >
               Copy Share Link
             </button>
-            {isAuthenticated && (
-              <button 
-                onClick={() => track('authenticated_action', { userId: user?.id, actionType: 'save_to_favorites' })}
-                className="py-3 px-6 bg-pink-100 text-pink-600 text-[15px] font-semibold border-2 border-pink-300 rounded-lg cursor-pointer transition-all duration-200 hover:bg-pink-200 active:translate-y-0.5 w-48"
-              >
-                Save to Favorites
-              </button>
-            )}
           </div>
         </div>
       </div>
