@@ -4,7 +4,6 @@ import AnimationCanvas from '../components/AnimationCanvas';
 import useTrackEvent from '../hooks/useTrackEvent';
 import Navbar from '../components/Navbar';
 import { Link } from 'react-router-dom';
-import { GetAnimationResponse } from '../types/schemas';
 
 // Interface for a single animation item
 interface AnimationItem {
