@@ -124,37 +124,37 @@ function HomePage() {
   };
 
   return (
-    <div className="h-screen w-full flex flex-col bg-gradient-to-br from-pink-50 to-pink-200 text-pink-800 font-sans overflow-hidden">
+    <div className="min-h-screen w-full flex flex-col bg-gradient-to-br from-pink-50 to-pink-200 text-pink-800 font-sans">
       <Navbar />
       <div className="flex-grow flex justify-center items-stretch overflow-auto">
-        <div className="max-w-full w-full h-full p-4 bg-white flex flex-col">
-          <div className="flex justify-center w-full mb-2 flex-col items-center">
-            <h1 className="text-2xl font-bold text-pink-800 relative inline-block mb-4">
+        <div className="max-w-full w-full p-3 sm:p-4 bg-white flex flex-col">
+          <div className="flex justify-center w-full mb-4 flex-col items-center">
+            <h1 className="text-xl sm:text-2xl font-bold text-pink-800 relative inline-block mb-2 sm:mb-4 text-center">
               Text to Animation
             </h1>
             {isAuthenticated && user && (
-              <div className="text-sm text-pink-600 mb-2">
+              <div className="text-sm text-pink-600 mb-2 text-center">
                 Welcome back, <span className="font-medium">{user.username || user.email}</span>!
               </div>
             )}
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 text-center px-2">
               Describe any scene and generate an animation within seconds
             </p>
           </div>
           
-          <div className="flex mb-4 gap-3 sm:flex-row flex-col">
+          <div className="flex mb-4 gap-2 sm:gap-3 flex-col">
             <input
               type="text"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="Describe the animation you want to create"
-              className="flex-grow p-[14px] text-base border-2 border-pink-200 rounded-lg outline-none transition-all duration-200 shadow-sm focus:border-pink-400 focus:shadow-[0_0_0_3px_rgba(255,102,179,0.15)]"
+              className="w-full p-3 sm:p-[14px] text-base border-2 border-pink-200 rounded-lg outline-none transition-all duration-200 shadow-sm focus:border-pink-400 focus:shadow-[0_0_0_3px_rgba(255,102,179,0.15)]"
               disabled={isLoading}
             />
             <button 
               onClick={handleCreateAnimation}
-              className="py-[14px] px-7 bg-pink-900 text-white font-semibold border-none rounded-lg cursor-pointer transition-all duration-200 shadow-md shadow-pink-700/30 hover:translate-y-[-2px] hover:shadow-lg hover:shadow-pink-700/40 active:translate-y-0 active:shadow-sm active:shadow-pink-700/40 disabled:bg-pink-400/70 disabled:cursor-not-allowed disabled:shadow-none sm:w-auto w-full"
+              className="py-3 sm:py-[14px] px-7 bg-pink-900 text-white font-semibold border-none rounded-lg cursor-pointer transition-all duration-200 shadow-md shadow-pink-700/30 hover:translate-y-[-2px] hover:shadow-lg hover:shadow-pink-700/40 active:translate-y-0 active:shadow-sm active:shadow-pink-700/40 disabled:bg-pink-400/70 disabled:cursor-not-allowed disabled:shadow-none w-full"
               disabled={isLoading || inputText.trim() === ''}
             >
               {isLoading ? (

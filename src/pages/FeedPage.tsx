@@ -184,18 +184,18 @@ const FeedPage: React.FC = () => {
               
               {/* Mood Feedback Section */}
               <div className="mt-4 mb-5">
-                <div className="flex justify-between items-center mb-2">
+                <div className="flex justify-between items-center mb-2 flex-wrap">
                   <p className="text-sm text-gray-600 text-center flex-1">How did this animation make you feel?</p>
                   {moodSaved && (
-                    <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full animate-fadeIn">
+                    <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full animate-fadeIn ml-auto mt-1 sm:mt-0">
                       Feedback saved! ✓
                     </span>
                   )}
                 </div>
-                <div className="flex justify-between items-center">
+                <div className="flex flex-wrap justify-center sm:justify-between items-center gap-1 sm:gap-0">
                   <button 
                     onClick={() => handleMoodSelection('much worse')}
-                    className={`flex flex-col items-center p-2 rounded-lg transition-all ${selectedMood === 'much worse' ? 'bg-pink-100 scale-110' : 'hover:bg-pink-50'}`}
+                    className={`flex flex-col items-center p-2 rounded-lg transition-all w-[60px] sm:w-auto ${selectedMood === 'much worse' ? 'bg-pink-100 scale-110' : 'hover:bg-pink-50'}`}
                     title="Much worse"
                   >
                     <span className="text-2xl">😞</span>
@@ -204,7 +204,7 @@ const FeedPage: React.FC = () => {
                   
                   <button 
                     onClick={() => handleMoodSelection('worse')}
-                    className={`flex flex-col items-center p-2 rounded-lg transition-all ${selectedMood === 'worse' ? 'bg-pink-100 scale-110' : 'hover:bg-pink-50'}`}
+                    className={`flex flex-col items-center p-2 rounded-lg transition-all w-[60px] sm:w-auto ${selectedMood === 'worse' ? 'bg-pink-100 scale-110' : 'hover:bg-pink-50'}`}
                     title="Worse"
                   >
                     <span className="text-2xl">😟</span>
@@ -213,7 +213,7 @@ const FeedPage: React.FC = () => {
                   
                   <button 
                     onClick={() => handleMoodSelection('same')}
-                    className={`flex flex-col items-center p-2 rounded-lg transition-all ${selectedMood === 'same' ? 'bg-pink-100 scale-110' : 'hover:bg-pink-50'}`}
+                    className={`flex flex-col items-center p-2 rounded-lg transition-all w-[60px] sm:w-auto ${selectedMood === 'same' ? 'bg-pink-100 scale-110' : 'hover:bg-pink-50'}`}
                     title="Same"
                   >
                     <span className="text-2xl">😐</span>
@@ -222,7 +222,7 @@ const FeedPage: React.FC = () => {
                   
                   <button 
                     onClick={() => handleMoodSelection('better')}
-                    className={`flex flex-col items-center p-2 rounded-lg transition-all ${selectedMood === 'better' ? 'bg-pink-100 scale-110' : 'hover:bg-pink-50'}`}
+                    className={`flex flex-col items-center p-2 rounded-lg transition-all w-[60px] sm:w-auto ${selectedMood === 'better' ? 'bg-pink-100 scale-110' : 'hover:bg-pink-50'}`}
                     title="Better"
                   >
                     <span className="text-2xl">😊</span>
@@ -231,7 +231,7 @@ const FeedPage: React.FC = () => {
                   
                   <button 
                     onClick={() => handleMoodSelection('much better')}
-                    className={`flex flex-col items-center p-2 rounded-lg transition-all ${selectedMood === 'much better' ? 'bg-pink-100 scale-110' : 'hover:bg-pink-50'}`}
+                    className={`flex flex-col items-center p-2 rounded-lg transition-all w-[60px] sm:w-auto ${selectedMood === 'much better' ? 'bg-pink-100 scale-110' : 'hover:bg-pink-50'}`}
                     title="Much better"
                   >
                     <span className="text-2xl">😄</span>
@@ -240,21 +240,21 @@ const FeedPage: React.FC = () => {
                 </div>
               </div>
               
-              <div className="flex justify-between items-center mt-4">
+              <div className="flex flex-col sm:flex-row justify-between items-center mt-4 gap-3">
                 <button 
                   onClick={handleGetNewAnimation}
                   disabled={selectedMood === null}
-                  className="bg-pink-500 text-white px-4 py-2 rounded-md text-sm hover:bg-pink-400 transition-colors disabled:opacity-50 disabled:hover:bg-pink-500 disabled:cursor-not-allowed"
+                  className="bg-pink-500 text-white px-4 py-2 rounded-md text-sm hover:bg-pink-400 transition-colors disabled:opacity-50 disabled:hover:bg-pink-500 disabled:cursor-not-allowed w-full sm:w-auto"
                   title={selectedMood === null ? "Please rate your mood first" : "Fetch another random animation"}
                 >
                   Get Another
                 </button>
                 
-                <div className="flex gap-2 relative">
+                <div className="flex gap-2 relative w-full sm:w-auto">
                   <button
                     onClick={handleShare}
                     disabled={selectedMood === null}
-                    className="bg-pink-700 text-white px-4 py-2 rounded-md text-sm hover:bg-pink-600 transition-colors flex items-center gap-1 disabled:opacity-50 disabled:hover:bg-pink-700 disabled:cursor-not-allowed"
+                    className="bg-pink-700 text-white px-4 py-2 rounded-md text-sm hover:bg-pink-600 transition-colors flex items-center gap-1 disabled:opacity-50 disabled:hover:bg-pink-700 disabled:cursor-not-allowed flex-1 sm:flex-auto justify-center sm:justify-start"
                     title={selectedMood === null ? "Please rate your mood first" : "Share this animation"}
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
