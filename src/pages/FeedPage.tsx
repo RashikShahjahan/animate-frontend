@@ -142,9 +142,7 @@ const FeedPage: React.FC = () => {
     <div className="min-h-screen flex flex-col bg-pink-50">
       <Navbar />
       
-      <div className="flex-1 flex flex-col items-center justify-center p-4">
-        <h1 className="text-2xl font-bold text-pink-800 mb-6">Random Animation</h1>
-        
+      <div className="flex-1 flex flex-col items-center justify-center p-4">        
         {isLoading && (
           <div className="flex flex-col items-center justify-center text-pink-400 h-64 w-full">
             <div className="w-[50px] h-[50px] border-4 border-pink-400/20 rounded-full border-t-pink-400 animate-spin mb-5"></div>
