@@ -18,6 +18,7 @@ const FeedPage: React.FC = () => {
   const [currentAnimation, setCurrentAnimation] = useState<AnimationItem | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [shareTooltip, setShareTooltip] = useState(false);
   const { track } = useTrackEvent();
 
   // Memoize the track function to prevent it from causing useEffect reruns
@@ -80,6 +81,25 @@ const FeedPage: React.FC = () => {
     }
   };
 
+  const handleShare = useCallback(() => {
+    if (!currentAnimation) return;
+    
+    const shareUrl = `${window.location.origin}/animation/${currentAnimation.id}`;
+    navigator.clipboard.writeText(shareUrl)
+      .then(() => {
+        setShareTooltip(true);
+        track('animation_shared', { animationId: currentAnimation.id });
+        
+        // Hide tooltip after 2 seconds
+        setTimeout(() => {
+          setShareTooltip(false);
+        }, 2000);
+      })
+      .catch(err => {
+        console.error('Failed to copy URL:', err);
+      });
+  }, [currentAnimation]);
+
   return (
     <div className="min-h-screen flex flex-col bg-pink-50">
       <Navbar />
@@ -133,12 +153,35 @@ const FeedPage: React.FC = () => {
                   Get Another
                 </button>
                 
-                <Link 
-                  to={`/animation/${currentAnimation.id}`}
-                  className="bg-pink-900 text-white px-4 py-2 rounded-md text-sm hover:bg-pink-800 transition-colors"
-                >
-                  View Details
-                </Link>
+                <div className="flex gap-2 relative">
+                  <button
+                    onClick={handleShare}
+                    className="bg-pink-700 text-white px-4 py-2 rounded-md text-sm hover:bg-pink-600 transition-colors flex items-center gap-1"
+                    title="Share this animation"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="18" cy="5" r="3"></circle>
+                      <circle cx="6" cy="12" r="3"></circle>
+                      <circle cx="18" cy="19" r="3"></circle>
+                      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                      <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                    </svg>
+                    Share
+                  </button>
+                  
+                  {shareTooltip && (
+                    <div className="absolute -top-10 right-0 bg-pink-900 text-white text-xs py-1 px-2 rounded shadow-md animate-fadeIn">
+                      Link copied!
+                    </div>
+                  )}
+                  
+                  <Link 
+                    to={`/animation/${currentAnimation.id}`}
+                    className="bg-pink-900 text-white px-4 py-2 rounded-md text-sm hover:bg-pink-800 transition-colors"
+                  >
+                    View Details
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
