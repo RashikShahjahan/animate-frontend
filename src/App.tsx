@@ -59,7 +59,7 @@ function App() {
           
           <Route
             path="/"
-            element={<LoginPage />}
+            element={<FeedPage />}
           />
         </Routes>
       </AuthProvider>
