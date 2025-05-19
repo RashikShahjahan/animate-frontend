@@ -154,7 +154,7 @@ const FeedPage: React.FC = () => {
         )}
         
         {error && !isLoading && (
-          <div className="flex flex-col items-center gap-2.5 text-pink-600 bg-pink-100 py-4 px-5 rounded-lg mb-4 text-center shadow-sm animate-slideIn w-full max-w-md">
+          <div className="flex flex-col items-center gap-2.5 text-pink-600 bg-pink-100 py-4 px-5 rounded-lg mb-4 text-center shadow-sm animate-slideIn w-full max-w-xl">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10"></circle>
               <line x1="12" y1="8" x2="12" y2="12"></line>
@@ -165,8 +165,8 @@ const FeedPage: React.FC = () => {
         )}
         
         {!isLoading && !error && currentAnimation && (
-          <div className="w-full max-w-md bg-white rounded-lg shadow-lg overflow-hidden">
-            <div className="h-[320px] p-2 bg-white overflow-hidden">
+          <div className="w-full max-w-xl bg-white rounded-lg shadow-lg overflow-hidden">
+            <div className="h-[400px] p-2 bg-white overflow-hidden">
               <div className="h-full w-full">
                 <AnimationCanvas 
                   isLoading={false}
@@ -287,7 +287,7 @@ const FeedPage: React.FC = () => {
         )}
         
         {!isLoading && !error && !currentAnimation && (
-          <div className="flex flex-col items-center gap-4 text-center max-w-md">
+          <div className="flex flex-col items-center gap-4 text-center max-w-xl">
             <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#aabdd9" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="opacity-60">
               <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path>
               <path d="M9 9h.01"></path>
