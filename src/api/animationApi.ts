@@ -15,7 +15,8 @@ import {
   RegisterResponse,
   LoginRequest,
   LoginResponse,
-
+  SaveMoodRequest,
+  SaveMoodResponse,
 
 } from '../types/schemas';
 
@@ -31,6 +32,8 @@ import {
   RegisterResponseSchema,
   LoginRequestSchema,
   LoginResponseSchema,
+  SaveMoodRequestSchema,
+  SaveMoodResponseSchema,
 } from '../types/schemas';
 
 // Add request interceptor for debugging
@@ -186,6 +189,24 @@ export const getFeed = async (): Promise<GetAnimationResponse> => {
     // Validate response data for animation feed
     return GetAnimationResponseSchema.parse(response.data);
     
+  } catch (error) {
+    return handleApiError(error);
+  }
+};
+
+/**
+ * Saves the user's mood feedback for an animation
+ */
+export const saveMood = async (data: SaveMoodRequest): Promise<SaveMoodResponse> => {
+  try {
+    // Validate request data
+    const validatedData = SaveMoodRequestSchema.parse(data);
+    
+    const url = new URL('save-mood', BASE_URL);
+    const response = await axios.post(url.toString(), validatedData);
+    
+    // Validate response data
+    return SaveMoodResponseSchema.parse(response.data);
   } catch (error) {
     return handleApiError(error);
   }

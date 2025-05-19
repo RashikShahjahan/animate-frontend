@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { getFeed } from '../api/animationApi';
+import { getFeed, saveMood } from '../api/animationApi';
 import AnimationCanvas from '../components/AnimationCanvas';
 import useTrackEvent from '../hooks/useTrackEvent';
 import Navbar from '../components/Navbar';
@@ -13,12 +13,17 @@ interface AnimationItem {
   id: string;
 }
 
+// Mood type for feedback
+type MoodType = 'much worse' | 'worse' | 'same' | 'better' | 'much better' | null;
+
 const FeedPage: React.FC = () => {
   const [animations, setAnimations] = useState<AnimationItem[]>([]);
   const [currentAnimation, setCurrentAnimation] = useState<AnimationItem | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [shareTooltip, setShareTooltip] = useState(false);
+  const [selectedMood, setSelectedMood] = useState<MoodType>(null);
+  const [moodSaved, setMoodSaved] = useState(false);
   const { track } = useTrackEvent();
 
   // Memoize the track function to prevent it from causing useEffect reruns
@@ -63,6 +68,9 @@ const FeedPage: React.FC = () => {
     try {
       // Fetch a new random animation from the backend
       setIsLoading(true);
+      // Reset mood selection for new animation
+      setSelectedMood(null);
+      setMoodSaved(false);
       const animation = await getFeed();
       
       if (animation && animation.id) {
@@ -99,6 +107,37 @@ const FeedPage: React.FC = () => {
         console.error('Failed to copy URL:', err);
       });
   }, [currentAnimation]);
+
+  const handleMoodSelection = (mood: MoodType) => {
+    setSelectedMood(mood);
+    setMoodSaved(false);
+    
+    if (currentAnimation && mood) {
+      // Track the mood feedback event
+      track('mood_feedback_submitted', { 
+        animationId: currentAnimation.id,
+        mood: mood 
+      });
+      
+      // Save the mood feedback to the server
+      saveMood({
+        animationId: currentAnimation.id,
+        mood: mood
+      })
+      .then(() => {
+        console.log('Mood feedback saved successfully');
+        setMoodSaved(true);
+        
+        // Hide the saved message after 3 seconds
+        setTimeout(() => {
+          setMoodSaved(false);
+        }, 3000);
+      })
+      .catch((error) => {
+        console.error('Failed to save mood feedback:', error);
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-pink-50">
@@ -144,11 +183,70 @@ const FeedPage: React.FC = () => {
                 {currentAnimation.description}
               </h3>
               
+              {/* Mood Feedback Section */}
+              <div className="mt-4 mb-5">
+                <div className="flex justify-between items-center mb-2">
+                  <p className="text-sm text-gray-600 text-center flex-1">How did this animation make you feel?</p>
+                  {moodSaved && (
+                    <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full animate-fadeIn">
+                      Feedback saved! ✓
+                    </span>
+                  )}
+                </div>
+                <div className="flex justify-between items-center">
+                  <button 
+                    onClick={() => handleMoodSelection('much worse')}
+                    className={`flex flex-col items-center p-2 rounded-lg transition-all ${selectedMood === 'much worse' ? 'bg-pink-100 scale-110' : 'hover:bg-pink-50'}`}
+                    title="Much worse"
+                  >
+                    <span className="text-2xl">😞</span>
+                    <span className="text-xs mt-1">Much worse</span>
+                  </button>
+                  
+                  <button 
+                    onClick={() => handleMoodSelection('worse')}
+                    className={`flex flex-col items-center p-2 rounded-lg transition-all ${selectedMood === 'worse' ? 'bg-pink-100 scale-110' : 'hover:bg-pink-50'}`}
+                    title="Worse"
+                  >
+                    <span className="text-2xl">😟</span>
+                    <span className="text-xs mt-1">Worse</span>
+                  </button>
+                  
+                  <button 
+                    onClick={() => handleMoodSelection('same')}
+                    className={`flex flex-col items-center p-2 rounded-lg transition-all ${selectedMood === 'same' ? 'bg-pink-100 scale-110' : 'hover:bg-pink-50'}`}
+                    title="Same"
+                  >
+                    <span className="text-2xl">😐</span>
+                    <span className="text-xs mt-1">Same</span>
+                  </button>
+                  
+                  <button 
+                    onClick={() => handleMoodSelection('better')}
+                    className={`flex flex-col items-center p-2 rounded-lg transition-all ${selectedMood === 'better' ? 'bg-pink-100 scale-110' : 'hover:bg-pink-50'}`}
+                    title="Better"
+                  >
+                    <span className="text-2xl">😊</span>
+                    <span className="text-xs mt-1">Better</span>
+                  </button>
+                  
+                  <button 
+                    onClick={() => handleMoodSelection('much better')}
+                    className={`flex flex-col items-center p-2 rounded-lg transition-all ${selectedMood === 'much better' ? 'bg-pink-100 scale-110' : 'hover:bg-pink-50'}`}
+                    title="Much better"
+                  >
+                    <span className="text-2xl">😄</span>
+                    <span className="text-xs mt-1">Much better</span>
+                  </button>
+                </div>
+              </div>
+              
               <div className="flex justify-between items-center mt-4">
                 <button 
                   onClick={handleGetNewAnimation}
+                  disabled={selectedMood === null}
                   className="bg-pink-500 text-white px-4 py-2 rounded-md text-sm hover:bg-pink-400 transition-colors disabled:opacity-50 disabled:hover:bg-pink-500 disabled:cursor-not-allowed"
-                  title="Fetch another random animation"
+                  title={selectedMood === null ? "Please rate your mood first" : "Fetch another random animation"}
                 >
                   Get Another
                 </button>
@@ -156,8 +254,9 @@ const FeedPage: React.FC = () => {
                 <div className="flex gap-2 relative">
                   <button
                     onClick={handleShare}
-                    className="bg-pink-700 text-white px-4 py-2 rounded-md text-sm hover:bg-pink-600 transition-colors flex items-center gap-1"
-                    title="Share this animation"
+                    disabled={selectedMood === null}
+                    className="bg-pink-700 text-white px-4 py-2 rounded-md text-sm hover:bg-pink-600 transition-colors flex items-center gap-1 disabled:opacity-50 disabled:hover:bg-pink-700 disabled:cursor-not-allowed"
+                    title={selectedMood === null ? "Please rate your mood first" : "Share this animation"}
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <circle cx="18" cy="5" r="3"></circle>

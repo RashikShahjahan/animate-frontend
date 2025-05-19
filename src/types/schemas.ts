@@ -87,6 +87,16 @@ export const ClaudeResponseSchema = z.object({
   content: z.array(ClaudeContentSchema)
 });
 
+// Schema for saving mood feedback
+export const SaveMoodRequestSchema = z.object({
+  animationId: z.string(),
+  mood: z.enum(['much worse', 'worse', 'same', 'better', 'much better']),
+});
+
+export const SaveMoodResponseSchema = z.object({
+  success: z.boolean(),
+});
+
 // Type inference from schemas
 export type AnimationRequest = z.infer<typeof AnimationRequestSchema>;
 export type AnimationResponse = z.infer<typeof AnimationResponseSchema>;
@@ -102,4 +112,6 @@ export type LoginResponse = z.infer<typeof LoginResponseSchema>;
 export type ClaudeMessage = z.infer<typeof ClaudeMessageSchema>;
 export type ClaudeRequest = z.infer<typeof ClaudeRequestSchema>;
 export type ClaudeContent = z.infer<typeof ClaudeContentSchema>;
-export type ClaudeResponse = z.infer<typeof ClaudeResponseSchema>; 
+export type ClaudeResponse = z.infer<typeof ClaudeResponseSchema>;
+export type SaveMoodRequest = z.infer<typeof SaveMoodRequestSchema>;
+export type SaveMoodResponse = z.infer<typeof SaveMoodResponseSchema>; 
