@@ -1,4 +1,4 @@
-# robots.txt for artsy.rashik.sh 
+# robots.txt for animate.rashik.sh 
 
 # Allow all web crawlers
 User-agent: *
@@ -8,7 +8,7 @@ Allow: /
 Crawl-delay: 1
 
 # Sitemap location (update this URL when you add a sitemap)
-Sitemap: https://artsy.rashik.sh/sitemap.xml
+Sitemap: https://animate.rashik.sh/sitemap.xml
 
 
 
