@@ -85,6 +85,9 @@ function HomePage() {
   };
 
   const handleSaveAndShare = async () => {
+    console.log('handleSaveAndShare function called!');
+    alert('handleSaveAndShare function called!');
+    
     try {
       // Track share attempt
       track('animation_share_attempt', {
