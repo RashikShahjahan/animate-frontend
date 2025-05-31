@@ -1,9 +1,12 @@
 /// <reference types="vite/client" />
 
-// Add type declaration for the global p5 instance
+// Add type declaration for the global Three.js instances
 declare global {
   interface Window {
-    p5: any;
-    p5Instance: any;
+    THREE: any;
+    threeScene: any;
+    threeRenderer: any;
+    threeCamera: any;
+    threeAnimationId: number | null;
   }
 } 

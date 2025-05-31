@@ -1,6 +1,6 @@
 # Animate Frontend
 
-This is a React application built with Vite.
+This is a React application built with Vite that generates 3D animations using Three.js.
 
 ## Getting Started
 
@@ -59,6 +59,7 @@ yarn preview
   - `App.tsx` - Main application component
   - `pages/` - Application pages
   - `components/` - Reusable components
+  - `utils/` - Utility functions including Three.js helpers
 - `public/` - Static assets
 - `index.html` - HTML template
 
@@ -69,4 +70,4 @@ yarn preview
 - Vite
 - React Router
 - Tailwind CSS
-- P5.js
+- Three.js

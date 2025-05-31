@@ -184,9 +184,20 @@ function HomePage() {
                   setCurrentError('');
                   setCode('');
                   setIsAnimationCreated(false);
-                  if (window.p5Instance) {
-                    window.p5Instance.remove();
+                  // Clean up Three.js instances
+                  if (window.threeAnimationId) {
+                    cancelAnimationFrame(window.threeAnimationId);
+                    window.threeAnimationId = null;
                   }
+                  if (window.threeRenderer) {
+                    window.threeRenderer.dispose();
+                    window.threeRenderer = null;
+                  }
+                  if (window.threeScene) {
+                    window.threeScene.clear();
+                    window.threeScene = null;
+                  }
+                  window.threeCamera = null;
                 }}
                 className="mt-2 py-2 px-4 bg-pink-200 text-pink-700 text-sm font-medium rounded-md hover:bg-pink-300 transition-colors"
               >
@@ -213,9 +224,20 @@ function HomePage() {
                       setIsAnimationCreated(false);
                       setCode('');
                       setCurrentError('');
-                      if (window.p5Instance) {
-                        window.p5Instance.remove();
+                      // Clean up Three.js instances
+                      if (window.threeAnimationId) {
+                        cancelAnimationFrame(window.threeAnimationId);
+                        window.threeAnimationId = null;
                       }
+                      if (window.threeRenderer) {
+                        window.threeRenderer.dispose();
+                        window.threeRenderer = null;
+                      }
+                      if (window.threeScene) {
+                        window.threeScene.clear();
+                        window.threeScene = null;
+                      }
+                      window.threeCamera = null;
                     }}
                     className="py-3 px-6 bg-pink-50 text-pink-400 text-[15px] font-semibold border-2 border-pink-200 rounded-lg cursor-pointer transition-all duration-200 hover:bg-pink-100 active:translate-y-0.5 w-48"
                   >
