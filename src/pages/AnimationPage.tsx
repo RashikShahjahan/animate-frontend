@@ -118,7 +118,6 @@ function AnimationPage() {
               isAnimationCreated={!isLoading && code !== ''}
               code={code}
               error={error}
-              className="!min-h-0 h-[300px] sm:h-[400px]"
             />
           </div>
           
