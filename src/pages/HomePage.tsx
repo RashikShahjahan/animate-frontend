@@ -85,9 +85,6 @@ function HomePage() {
   };
 
   const handleSaveAndShare = async () => {
-    console.log('handleSaveAndShare function called!');
-    alert('handleSaveAndShare function called!');
-    
     try {
       // Track share attempt
       track('animation_share_attempt', {
@@ -101,12 +98,22 @@ function HomePage() {
       });
       const id = response.id;
       
-      // Copy the link to clipboard instead of navigating
+      // Copy the link to clipboard
       const shareUrl = `${window.location.origin}/animation/${id}`;
       await navigator.clipboard.writeText(shareUrl);
       
       // Show a success message
-      alert('Animation link copied to clipboard!');
+      if (isAuthenticated) {
+        alert('Animation saved to your collection and link copied to clipboard!');
+        // Track save to collection
+        track('save_to_collection', { 
+          userId: user?.id,
+          prompt: inputText,
+          animationId: id
+        });
+      } else {
+        alert('Animation link copied to clipboard!');
+      }
       
       // Track successful share
       track('animation_shared', { 
@@ -115,7 +122,7 @@ function HomePage() {
         userId: user?.id
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to share animation');
+      setError(err instanceof Error ? err.message : 'Failed to save animation');
       
       // Track share error
       track('animation_share_error', {
@@ -248,27 +255,11 @@ function HomePage() {
                   </button>
                   <button 
                     onClick={handleSaveAndShare}
-                    className="py-3 px-6 bg-pink-50 text-pink-400 text-[15px] font-semibold border-2 border-pink-200 rounded-lg cursor-pointer transition-all duration-200 hover:bg-pink-100 active:translate-y-0.5 w-48"
+                    className="py-3 px-6 bg-pink-600 text-white text-[15px] font-semibold border-2 border-pink-600 rounded-lg cursor-pointer transition-all duration-200 hover:bg-pink-700 hover:border-pink-700 active:translate-y-0.5 w-48"
                   >
-                    Copy Link
+                    {isAuthenticated ? 'Save & Share' : 'Share'}
                   </button>
                 </div>
-                {isAuthenticated && (
-                  <div className="mt-2">
-                    <button 
-                      onClick={() => {
-                        track('save_to_collection', { 
-                          userId: user?.id,
-                          prompt: inputText
-                        });
-                        alert('Animation saved to your collection!');
-                      }}
-                      className="py-3 px-6 bg-pink-100 text-pink-600 text-[15px] font-semibold border-2 border-pink-300 rounded-lg cursor-pointer transition-all duration-200 hover:bg-pink-200 active:translate-y-0.5 w-full"
-                    >
-                      Save to Your Collection
-                    </button>
-                  </div>
-                )}
               </div>
           )}
         </div>
