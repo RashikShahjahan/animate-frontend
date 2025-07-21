@@ -30,6 +30,18 @@ export const runP5Sketch = (sketchCode: string, container: HTMLDivElement, onErr
       console.warn('Error while removing previous p5 instance:', e);
     }
     window.p5Instance = null;
+    
+    // Clean up global variables to prevent conflicts
+    const globalVarsToClean = ['width', 'height', 'mouseX', 'mouseY', 'frameCount', 'windowWidth', 'windowHeight'];
+    globalVarsToClean.forEach(varName => {
+      try {
+        if (window.hasOwnProperty(varName)) {
+          delete window[varName as any];
+        }
+      } catch (e) {
+        // Some properties might be non-configurable, ignore errors
+      }
+    });
   }
   
   // Clear the container
@@ -41,8 +53,8 @@ export const runP5Sketch = (sketchCode: string, container: HTMLDivElement, onErr
     // Preprocess sketch code to fix common syntax errors
     sketchCode = preprocessP5Code(sketchCode);
     
-    // Assign a unique ID to the container
-    const containerId = 'p5-sketch-container-' + Date.now();
+    // Use the existing container ID or assign 'animation-container' as default
+    const containerId = container.id || 'animation-container';
     container.id = containerId;
     
     // Get container dimensions
@@ -84,6 +96,18 @@ export const runP5Sketch = (sketchCode: string, container: HTMLDivElement, onErr
             console.warn('Error removing existing p5 instance:', e);
           }
           window.p5Instance = null;
+          
+          // Clean up global variables
+          const globalVarsToClean = ['width', 'height', 'mouseX', 'mouseY', 'frameCount', 'windowWidth', 'windowHeight'];
+          globalVarsToClean.forEach(varName => {
+            try {
+              if (window.hasOwnProperty(varName)) {
+                delete window[varName];
+              }
+            } catch (e) {
+              // Some properties might be non-configurable, ignore errors
+            }
+          });
         }
         
         window.p5Instance = new window.p5(function(p) {
@@ -99,7 +123,10 @@ export const runP5Sketch = (sketchCode: string, container: HTMLDivElement, onErr
             'noise', 'sin', 'cos', 'tan', 'atan2', 'degrees', 'radians',
             'push', 'pop', 'translate', 'rotate', 'scale', 'frameRate',
             'mousePressed', 'mouseReleased', 'keyPressed', 'keyReleased',
-            'resizeCanvas', 'windowResized', 'draw', 'setup'
+            'resizeCanvas', 'windowResized', 'draw', 'setup', 'constrain',
+            'lerpColor', 'color', 'red', 'green', 'blue', 'alpha', 'hue',
+            'saturation', 'brightness', 'colorMode', 'lerp', 'dist', 'mag',
+            'pow', 'sqrt', 'log', 'exp'
           ];
           
           // Create global references to p5 instance methods
@@ -109,14 +136,32 @@ export const runP5Sketch = (sketchCode: string, container: HTMLDivElement, onErr
             }
           });
           
-          // Global variables
-          Object.defineProperty(window, 'width', { get: () => p.width });
-          Object.defineProperty(window, 'height', { get: () => p.height });
-          Object.defineProperty(window, 'mouseX', { get: () => p.mouseX });
-          Object.defineProperty(window, 'mouseY', { get: () => p.mouseY });
-          Object.defineProperty(window, 'frameCount', { get: () => p.frameCount });
-          Object.defineProperty(window, 'windowWidth', { get: () => window.innerWidth });
-          Object.defineProperty(window, 'windowHeight', { get: () => window.innerHeight });
+          // Global variables - safely define only if not already defined
+          const safeDefineProperty = (obj, prop, descriptor) => {
+            try {
+              if (!obj.hasOwnProperty(prop) || obj.propertyIsEnumerable(prop)) {
+                Object.defineProperty(obj, prop, descriptor);
+              } else {
+                // If property exists and is non-configurable, assign directly
+                obj[prop] = descriptor.get ? descriptor.get() : descriptor.value;
+              }
+            } catch (e) {
+              // Fallback: assign directly to window
+              try {
+                obj[prop] = descriptor.get ? descriptor.get() : descriptor.value;
+              } catch (fallbackError) {
+                console.warn('Could not define property', prop, fallbackError);
+              }
+            }
+          };
+          
+          safeDefineProperty(window, 'width', { get: () => p.width, configurable: true });
+          safeDefineProperty(window, 'height', { get: () => p.height, configurable: true });
+          safeDefineProperty(window, 'mouseX', { get: () => p.mouseX, configurable: true });
+          safeDefineProperty(window, 'mouseY', { get: () => p.mouseY, configurable: true });
+          safeDefineProperty(window, 'frameCount', { get: () => p.frameCount, configurable: true });
+          safeDefineProperty(window, 'windowWidth', { get: () => window.innerWidth, configurable: true });
+          safeDefineProperty(window, 'windowHeight', { get: () => window.innerHeight, configurable: true });
           
           // Constants
           window.CENTER = p.CENTER;
@@ -127,6 +172,12 @@ export const runP5Sketch = (sketchCode: string, container: HTMLDivElement, onErr
           window.CORNER = p.CORNER;
           window.CORNERS = p.CORNERS;
           window.RADIUS = p.RADIUS;
+          
+          // Math constants
+          window.PI = p.PI;
+          window.TWO_PI = p.TWO_PI;
+          window.HALF_PI = p.HALF_PI;
+          window.QUARTER_PI = p.QUARTER_PI;
           
           // Store original setup method if it exists in user code
           let userSetup = null;
@@ -228,7 +279,7 @@ export const runP5Sketch = (sketchCode: string, container: HTMLDivElement, onErr
       const canvas = container.querySelector('canvas');
       if (!canvas) {
         console.warn('No canvas found after running p5.js sketch');
-        onError('No canvas was created. The animation might not be working correctly.');
+        onError('Animation failed to render. This might be due to an error in the generated code.');
       } else {
         // Style the canvas for responsive behavior
         canvas.style.width = 'auto';

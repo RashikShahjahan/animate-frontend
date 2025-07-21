@@ -26,6 +26,18 @@ const AnimationCanvas: React.FC<AnimationCanvasProps> = ({
         try {
           window.p5Instance.remove();
           window.p5Instance = null;
+          
+          // Clean up global variables to prevent conflicts
+          const globalVarsToClean = ['width', 'height', 'mouseX', 'mouseY', 'frameCount', 'windowWidth', 'windowHeight'];
+          globalVarsToClean.forEach(varName => {
+            try {
+              if ((window as any).hasOwnProperty(varName)) {
+                delete (window as any)[varName];
+              }
+            } catch (e) {
+              // Some properties might be non-configurable, ignore errors
+            }
+          });
         } catch (e) {
           console.warn('Error cleaning up p5.js animation:', e);
         }
@@ -93,6 +105,7 @@ const AnimationCanvas: React.FC<AnimationCanvasProps> = ({
       <div 
         ref={sketchContainerRef} 
         className="flex justify-center items-center relative z-10 w-full h-full"
+        id="animation-container"
         data-testid="animation-container"
       ></div>
     </div>
