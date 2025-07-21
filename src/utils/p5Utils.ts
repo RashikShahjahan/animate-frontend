@@ -226,17 +226,27 @@ export const runP5Sketch = (sketchCode: string, container: HTMLDivElement, onErr
           
           // Execute user code to capture their functions
           try {
+            console.log('Executing user code (length: ${finalSketchCode.length} chars)');
+            console.log('User code preview:', \`${finalSketchCode}\`.substring(0, 200) + '...');
+            
             ${finalSketchCode}
             
             // Capture user-defined functions
             if (typeof window.setup === 'function') {
               userSetup = window.setup;
+              console.log('Found user setup function');
+            } else {
+              console.log('No user setup function found');
             }
             if (typeof window.draw === 'function') {
               userDraw = window.draw;
+              console.log('Found user draw function');
+            } else {
+              console.log('No user draw function found');
             }
             if (typeof window.windowResized === 'function') {
               userWindowResized = window.windowResized;
+              console.log('Found user windowResized function');
             }
           } catch (userCodeError) {
             console.error('Error in user p5.js code:', userCodeError);
@@ -269,6 +279,8 @@ export const runP5Sketch = (sketchCode: string, container: HTMLDivElement, onErr
             try {
               if (userDraw) {
                 userDraw();
+              } else {
+                console.warn('No user draw function found - animation may appear blank');
               }
             } catch (drawError) {
               console.error('Error in p5.js draw:', drawError);
