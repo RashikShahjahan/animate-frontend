@@ -18,6 +18,46 @@ export const preprocessP5Code = (code: string): string => {
   fixedCode = fixedCode.replace(/(\w+)\[(\w+)\.(\w+)\s*(\+|-|\*|\/|)=\s*([^;]+);/g, 
                                "$1[$2].$3 $4= $5;");
   
+  // Fix global variable declarations without let/var/const
+  // Look for variable assignments that aren't already declared
+  const lines = fixedCode.split('\n');
+  const processedLines = [];
+  const declaredVars = new Set();
+  
+  // First pass: collect already declared variables
+  for (const line of lines) {
+    const letMatch = line.match(/(?:let|var|const)\s+([a-zA-Z_$][a-zA-Z0-9_$]*)/g);
+    if (letMatch) {
+      letMatch.forEach(match => {
+        const varName = match.replace(/(?:let|var|const)\s+/, '');
+        declaredVars.add(varName);
+      });
+    }
+  }
+  
+  // Second pass: fix undeclared variables
+  for (const line of lines) {
+    let processedLine = line;
+    
+    // Look for variable assignments that aren't function declarations or already declared
+    const assignmentMatch = line.match(/^\s*([a-zA-Z_$][a-zA-Z0-9_$]*)\s*=/);
+    if (assignmentMatch && 
+        !line.includes('function') && 
+        !line.includes('let ') && 
+        !line.includes('var ') && 
+        !line.includes('const ') &&
+        !declaredVars.has(assignmentMatch[1])) {
+      
+      // Add let declaration
+      processedLine = line.replace(/^(\s*)([a-zA-Z_$][a-zA-Z0-9_$]*\s*=)/, '$1let $2');
+      declaredVars.add(assignmentMatch[1]);
+    }
+    
+    processedLines.push(processedLine);
+  }
+  
+  fixedCode = processedLines.join('\n');
+  
   return fixedCode;
 };
 
@@ -206,15 +246,18 @@ export const runP5Sketch = (sketchCode: string, container: HTMLDivElement, onErr
           // Setup method
           p.setup = function() {
             try {
+              console.log('p5.js setup starting...');
               if (userSetup) {
+                console.log('Running user setup function');
                 userSetup();
               } else {
-                // Default setup if user didn't provide one
+                console.log('No user setup found, creating default canvas');
                 p.createCanvas(${containerWidth}, ${containerHeight});
               }
               
               originalWidth = p.width || ${containerWidth};
               originalHeight = p.height || ${containerHeight};
+              console.log('Setup completed, canvas size:', originalWidth, 'x', originalHeight);
             } catch (setupError) {
               console.error('Error in p5.js setup:', setupError);
               throw setupError;
@@ -279,8 +322,11 @@ export const runP5Sketch = (sketchCode: string, container: HTMLDivElement, onErr
       const canvas = container.querySelector('canvas');
       if (!canvas) {
         console.warn('No canvas found after running p5.js sketch');
-        onError('Animation failed to render. This might be due to an error in the generated code.');
+        console.log('Container contents:', container.innerHTML);
+        console.log('p5 instance state:', window.p5Instance ? 'exists' : 'missing');
+        onError('Animation failed to render. Please try regenerating the animation.');
       } else {
+        console.log('Canvas successfully created:', canvas);
         // Style the canvas for responsive behavior
         canvas.style.width = 'auto';
         canvas.style.height = 'auto';
