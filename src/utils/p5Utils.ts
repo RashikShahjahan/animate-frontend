@@ -54,15 +54,24 @@ export const runP5Sketch = (sketchCode: string, container: HTMLDivElement, onErr
       console.warn('Container has invalid dimensions, using defaults');
     }
     
-    // Extract the p5 function from the sketch code
-    // The API returns code in format: new p5(function(p) { ... });
-    const functionBodyMatch = sketchCode.match(/new p5\(function\(p\) \{([\s\S]*)\}\);?$/);
+    // Check if the code is already wrapped in the p5 constructor format
+    const isWrappedFormat = sketchCode.includes('new p5(function(p)') || sketchCode.includes('new p5((p)');
     
-    if (!functionBodyMatch || !functionBodyMatch[1]) {
-      throw new Error('Invalid sketch code format');
+    let finalSketchCode: string;
+    
+    if (isWrappedFormat) {
+      // Handle the wrapped format (legacy)
+      const functionBodyMatch = sketchCode.match(/new p5\(function\(p\) \{([\s\S]*)\}\);?$/);
+      
+      if (!functionBodyMatch || !functionBodyMatch[1]) {
+        throw new Error('Invalid wrapped sketch code format');
+      }
+      
+      finalSketchCode = functionBodyMatch[1];
+    } else {
+      // Handle raw p5.js code (new format)
+      finalSketchCode = sketchCode;
     }
-    
-    const sketchBody = functionBodyMatch[1];
     
     // Create the script to execute
     const scriptElement = document.createElement('script');
@@ -81,71 +90,121 @@ export const runP5Sketch = (sketchCode: string, container: HTMLDivElement, onErr
           // Store original canvas dimensions
           let originalWidth, originalHeight;
           
-          // Add setup method override to ensure canvas fits container
-          const originalSetup = p.setup || function() {};
+          // Override p5.js global functions to work in instance mode
+          const globalFunctions = [
+            'createCanvas', 'background', 'fill', 'stroke', 'noStroke', 'noFill',
+            'strokeWeight', 'rect', 'ellipse', 'line', 'point', 'triangle',
+            'quad', 'arc', 'circle', 'square', 'textAlign', 'textSize', 'text',
+            'random', 'floor', 'ceil', 'round', 'abs', 'min', 'max', 'map',
+            'noise', 'sin', 'cos', 'tan', 'atan2', 'degrees', 'radians',
+            'push', 'pop', 'translate', 'rotate', 'scale', 'frameRate',
+            'mousePressed', 'mouseReleased', 'keyPressed', 'keyReleased',
+            'resizeCanvas', 'windowResized', 'draw', 'setup'
+          ];
           
+          // Create global references to p5 instance methods
+          globalFunctions.forEach(funcName => {
+            if (typeof p[funcName] === 'function') {
+              window[funcName] = p[funcName].bind(p);
+            }
+          });
+          
+          // Global variables
+          Object.defineProperty(window, 'width', { get: () => p.width });
+          Object.defineProperty(window, 'height', { get: () => p.height });
+          Object.defineProperty(window, 'mouseX', { get: () => p.mouseX });
+          Object.defineProperty(window, 'mouseY', { get: () => p.mouseY });
+          Object.defineProperty(window, 'frameCount', { get: () => p.frameCount });
+          Object.defineProperty(window, 'windowWidth', { get: () => window.innerWidth });
+          Object.defineProperty(window, 'windowHeight', { get: () => window.innerHeight });
+          
+          // Constants
+          window.CENTER = p.CENTER;
+          window.LEFT = p.LEFT;
+          window.RIGHT = p.RIGHT;
+          window.TOP = p.TOP;
+          window.BOTTOM = p.BOTTOM;
+          window.CORNER = p.CORNER;
+          window.CORNERS = p.CORNERS;
+          window.RADIUS = p.RADIUS;
+          
+          // Store original setup method if it exists in user code
+          let userSetup = null;
+          let userDraw = null;
+          let userWindowResized = null;
+          
+          // Execute user code to capture their functions
+          try {
+            ${finalSketchCode}
+            
+            // Capture user-defined functions
+            if (typeof window.setup === 'function') {
+              userSetup = window.setup;
+            }
+            if (typeof window.draw === 'function') {
+              userDraw = window.draw;
+            }
+            if (typeof window.windowResized === 'function') {
+              userWindowResized = window.windowResized;
+            }
+          } catch (userCodeError) {
+            console.error('Error in user p5.js code:', userCodeError);
+            throw userCodeError;
+          }
+          
+          // Setup method
           p.setup = function() {
             try {
-              originalSetup.call(p);
-              
-              // If createCanvas wasn't called in the original setup
-              if (!p.canvas) {
-                p.createCanvas(${containerWidth}, ${containerHeight});
-                originalWidth = ${containerWidth};
-                originalHeight = ${containerHeight};
+              if (userSetup) {
+                userSetup();
               } else {
-                // Store original dimensions before resizing
-                originalWidth = p.width || ${containerWidth};
-                originalHeight = p.height || ${containerHeight};
+                // Default setup if user didn't provide one
+                p.createCanvas(${containerWidth}, ${containerHeight});
               }
+              
+              originalWidth = p.width || ${containerWidth};
+              originalHeight = p.height || ${containerHeight};
             } catch (setupError) {
               console.error('Error in p5.js setup:', setupError);
+              throw setupError;
             }
           };
           
-          // Add window resize handling
+          // Draw method
+          p.draw = function() {
+            try {
+              if (userDraw) {
+                userDraw();
+              }
+            } catch (drawError) {
+              console.error('Error in p5.js draw:', drawError);
+              // Don't rethrow draw errors to prevent animation from stopping
+            }
+          };
+          
+          // Window resize handling
           p.windowResized = function() {
             try {
-              const container = document.getElementById('${containerId}');
-              if (container && originalWidth && originalHeight) {
-                // Maintain aspect ratio
-                const containerWidth = container.clientWidth;
-                const containerHeight = container.clientHeight;
+              if (userWindowResized) {
+                userWindowResized();
+              } else {
+                // Default resize behavior
+                const container = document.getElementById('${containerId}');
+                if (container && originalWidth && originalHeight) {
+                  const containerWidth = container.clientWidth;
+                  const containerHeight = container.clientHeight;
+                  p.resizeCanvas(containerWidth, containerHeight);
+                }
               }
             } catch (resizeError) {
               console.warn('Error in windowResized:', resizeError);
             }
           };
           
-          // Add error handling to preload
-          const originalPreload = p.preload || function() {};
-          p.preload = function() {
-            try {
-              originalPreload.call(p);
-            } catch (preloadError) {
-              console.error('Error in p5.js preload:', preloadError);
-            }
-          };
-          
-          // Handle external resources with CORS errors
-          p.httpGet = function(url, datatype, callback) {
-            // Check if URL is from domains that might have CORS issues
-            const corsProblematicDomains = ['placekitten.com', 'imgur.com', 'giphy.com'];
-            
-            // If the URL contains a problematic domain, use a CORS proxy
-            if (corsProblematicDomains.some(domain => url.includes(domain))) {
-              console.warn('Using CORS-safe alternative for external resource:', url);
-              // Use a CORS-friendly placeholder instead
-              url = 'https://via.placeholder.com/800x600';
-            }
-            
-            return p._httpGet(url, datatype, callback);
-          };
-          
-          ${sketchBody}
         }, '${containerId}');
       } catch (e) {
         console.error('Error in p5.js sketch execution:', e);
+        throw e;
       }
     `;
     
@@ -171,12 +230,13 @@ export const runP5Sketch = (sketchCode: string, container: HTMLDivElement, onErr
         console.warn('No canvas found after running p5.js sketch');
         onError('No canvas was created. The animation might not be working correctly.');
       } else {
-        // Keep original dimensions but let CSS handle the sizing
+        // Style the canvas for responsive behavior
         canvas.style.width = 'auto';
         canvas.style.height = 'auto';
         canvas.style.maxWidth = '100%';
         canvas.style.maxHeight = '100%';
         canvas.style.margin = '0 auto';
+        canvas.style.display = 'block';
       }
     }, 1000);
     

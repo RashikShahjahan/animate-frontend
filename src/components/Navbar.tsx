@@ -8,13 +8,13 @@ const Navbar = () => {
     <nav className="bg-pink-900 text-white p-4 shadow-md">
       <div className="container mx-auto flex justify-between items-center">
         <div className="flex items-center gap-4">
-          <Link to="/home" className="text-xl font-bold">Animation Studio</Link>
           <Link 
-            to="/feed" 
+            to="/home" 
             className="bg-pink-700 hover:bg-pink-800 px-4 py-2 rounded-md text-sm font-medium transition-colors"
           >
-            Feed
+            Animation Studio
           </Link>
+          <Link to="/feed" className="text-xl font-bold">Feed</Link>
         </div>
         
         {isAuthenticated ? (

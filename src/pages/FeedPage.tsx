@@ -41,20 +41,38 @@ const FeedPage: React.FC = () => {
       try {
         const animation = await getFeed();
         
-        if (animation && animation.id) {
+        if (animation && animation.id && animation.code) {
           // Convert the single animation to an array
           const animationArray = [animation];
           setAnimations(animationArray);
           setCurrentAnimation(animation);
           track('random_animation_loaded', { animationId: animation.id });
         } else {
-          setError('No animations found');
-          track('feed_load_error', { error: 'No animations found' });
+          // Handle case where animation data is incomplete
+          setAnimations([]);
+          setCurrentAnimation(null);
+          track('feed_load_error', { error: 'Incomplete animation data received' });
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load animations');
+        // Handle API errors that might indicate no animations available
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load animations';
+        
+        // Check if the error indicates no animations are available
+        if (errorMessage.includes('no animations') || 
+            errorMessage.includes('empty') || 
+            errorMessage.includes('not found') ||
+            errorMessage.includes('404')) {
+          // Set empty state instead of error for better UX
+          setAnimations([]);
+          setCurrentAnimation(null);
+          setError('');
+        } else {
+          // Show error for actual API failures
+          setError(errorMessage);
+        }
+        
         console.error(err);
-        track('feed_load_error', { error: err instanceof Error ? err.message : 'Unknown error' });
+        track('feed_load_error', { error: errorMessage });
       } finally {
         setIsLoading(false);
       }
@@ -70,19 +88,41 @@ const FeedPage: React.FC = () => {
       // Reset mood selection for new animation
       setSelectedMood(null);
       setMoodSaved(false);
+      setError(''); // Clear any previous errors
+      
       const animation = await getFeed();
       
-      if (animation && animation.id) {
+      if (animation && animation.id && animation.code) {
         // Update the animations array
         const animationArray = [animation];
         setAnimations(animationArray);
         setCurrentAnimation(animation);
         track('random_animation_loaded', { animationId: animation.id });
+      } else {
+        // Handle case where animation data is incomplete
+        setAnimations([]);
+        setCurrentAnimation(null);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load animation');
+      // Handle API errors that might indicate no animations available
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load animation';
+      
+      // Check if the error indicates no animations are available
+      if (errorMessage.includes('no animations') || 
+          errorMessage.includes('empty') || 
+          errorMessage.includes('not found') ||
+          errorMessage.includes('404')) {
+        // Set empty state instead of error for better UX
+        setAnimations([]);
+        setCurrentAnimation(null);
+        setError('');
+      } else {
+        // Show error for actual API failures
+        setError(errorMessage);
+      }
+      
       console.error(err);
-      track('feed_load_error', { error: err instanceof Error ? err.message : 'Unknown error' });
+      track('feed_load_error', { error: errorMessage });
     } finally {
       setIsLoading(false);
     }
@@ -284,21 +324,41 @@ const FeedPage: React.FC = () => {
         )}
         
         {!isLoading && !error && !currentAnimation && (
-          <div className="flex flex-col items-center gap-4 text-center max-w-xl">
-            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#aabdd9" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="opacity-60">
-              <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path>
-              <path d="M9 9h.01"></path>
-              <path d="M15 9h.01"></path>
-              <path d="M8 13h8a4 4 0 0 1 0 8H8a4 4 0 0 1 0-8z"></path>
-            </svg>
-            <h3 className="text-lg font-medium text-pink-800">No animations available</h3>
-            <p className="text-gray-600">Check back later for amazing animations or create your own!</p>
-            <Link 
-              to="/home" 
-              className="mt-4 bg-pink-900 text-white px-6 py-3 rounded-lg font-medium hover:bg-pink-800 transition-colors"
-            >
-              Create Animation
-            </Link>
+          <div className="flex flex-col items-center gap-4 text-center max-w-xl bg-white rounded-lg shadow-lg p-8">
+            <div className="bg-pink-50 rounded-full p-4 mb-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ec4899" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+              </svg>
+            </div>
+            <h3 className="text-xl font-semibold text-pink-800">No animations in the feed yet</h3>
+            <p className="text-gray-600 leading-relaxed">
+              Be the first to contribute! Create a beautiful animation and share it with the community.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 mt-4 w-full sm:w-auto">
+              <Link 
+                to="/home" 
+                className="bg-pink-500 text-white px-6 py-3 rounded-lg font-medium hover:bg-pink-600 transition-colors flex items-center justify-center gap-2"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="8" x2="12" y2="16"></line>
+                  <line x1="8" y1="12" x2="16" y2="12"></line>
+                </svg>
+                Create Animation
+              </Link>
+              <button 
+                onClick={handleGetNewAnimation}
+                className="bg-pink-100 text-pink-700 px-6 py-3 rounded-lg font-medium hover:bg-pink-200 transition-colors flex items-center justify-center gap-2"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                  <path d="M3 3v5h5"></path>
+                  <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path>
+                  <path d="M21 21v-5h-5"></path>
+                </svg>
+                Try Again
+              </button>
+            </div>
           </div>
         )}
       </div>

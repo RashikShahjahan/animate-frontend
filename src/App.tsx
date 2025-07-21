@@ -8,7 +8,6 @@ import FeedPage from './pages/FeedPage';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import UnprotectedRoute from './components/UnprotectedRoute';
-import * as THREE from 'three';
 
 function App() {
   return (
@@ -68,15 +67,6 @@ function App() {
   );
 }
 
-// Add type declaration for the global Three.js instances
-declare global {
-  interface Window {
-    THREE: any;
-    threeScene: THREE.Scene | null;
-    threeRenderer: THREE.WebGLRenderer | null;
-    threeCamera: THREE.Camera | null;
-    threeAnimationId: number | null;
-  }
-}
+
 
 export default App;
