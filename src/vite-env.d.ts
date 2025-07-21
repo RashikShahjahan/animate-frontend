@@ -1,12 +1,13 @@
 /// <reference types="vite/client" />
 
-// Add type declaration for the global Three.js instances
+// Global window interface extensions
 declare global {
   interface Window {
-    THREE: any;
-    threeScene: any;
-    threeRenderer: any;
-    threeCamera: any;
+    p5Instance: any;
+    p5: any;
     threeAnimationId: number | null;
+    threeRenderer: any;
+    threeScene: any;
+    threeCamera: any;
   }
 } 

@@ -41,7 +41,7 @@ function HomePage() {
         description: inputText
       });
       
-      // Assuming the API returns a p5js sketch code as a string in the 'code' field
+      // The API returns p5.js sketch code as a string in the 'code' field
       if (data.code) {
         setIsAnimationCreated(true);
         setCode(data.code);
@@ -194,20 +194,15 @@ function HomePage() {
                   setCurrentError('');
                   setCode('');
                   setIsAnimationCreated(false);
-                  // Clean up Three.js instances
-                  if (window.threeAnimationId) {
-                    cancelAnimationFrame(window.threeAnimationId);
-                    window.threeAnimationId = null;
+                  // Clean up p5.js instances
+                  if (window.p5Instance) {
+                    try {
+                      window.p5Instance.remove();
+                      window.p5Instance = null;
+                    } catch (e) {
+                      console.warn('Error cleaning up p5.js animation:', e);
+                    }
                   }
-                  if (window.threeRenderer) {
-                    window.threeRenderer.dispose();
-                    window.threeRenderer = null;
-                  }
-                  if (window.threeScene) {
-                    window.threeScene.clear();
-                    window.threeScene = null;
-                  }
-                  window.threeCamera = null;
                 }}
                 className="mt-2 py-2 px-4 bg-pink-200 text-pink-700 text-sm font-medium rounded-md hover:bg-pink-300 transition-colors"
               >
@@ -234,20 +229,15 @@ function HomePage() {
                       setIsAnimationCreated(false);
                       setCode('');
                       setCurrentError('');
-                      // Clean up Three.js instances
-                      if (window.threeAnimationId) {
-                        cancelAnimationFrame(window.threeAnimationId);
-                        window.threeAnimationId = null;
+                      // Clean up p5.js instances
+                      if (window.p5Instance) {
+                        try {
+                          window.p5Instance.remove();
+                          window.p5Instance = null;
+                        } catch (e) {
+                          console.warn('Error cleaning up p5.js animation:', e);
+                        }
                       }
-                      if (window.threeRenderer) {
-                        window.threeRenderer.dispose();
-                        window.threeRenderer = null;
-                      }
-                      if (window.threeScene) {
-                        window.threeScene.clear();
-                        window.threeScene = null;
-                      }
-                      window.threeCamera = null;
                     }}
                     className="py-3 px-6 bg-pink-50 text-pink-400 text-[15px] font-semibold border-2 border-pink-200 rounded-lg cursor-pointer transition-all duration-200 hover:bg-pink-100 active:translate-y-0.5 w-48"
                   >

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { runThreeSketch } from '../utils/threeUtils';
+import { runP5Sketch } from '../utils/p5Utils';
 
 interface AnimationCanvasProps {
   isLoading: boolean;
@@ -19,34 +19,17 @@ const AnimationCanvas: React.FC<AnimationCanvasProps> = ({
   const sketchContainerRef = useRef<HTMLDivElement>(null);
   const [canvasError, setCanvasError] = useState<string>('');
   
-  // Clean up any previous Three.js instance when component unmounts
+  // Clean up any previous p5.js instance when component unmounts
   useEffect(() => {
     return () => {
-      if (window.threeAnimationId) {
+      if (window.p5Instance) {
         try {
-          cancelAnimationFrame(window.threeAnimationId);
-          window.threeAnimationId = null;
+          window.p5Instance.remove();
+          window.p5Instance = null;
         } catch (e) {
-          console.warn('Error cleaning up Three.js animation:', e);
+          console.warn('Error cleaning up p5.js animation:', e);
         }
       }
-      if (window.threeRenderer) {
-        try {
-          window.threeRenderer.dispose();
-          window.threeRenderer = null;
-        } catch (e) {
-          console.warn('Error cleaning up Three.js renderer:', e);
-        }
-      }
-      if (window.threeScene) {
-        try {
-          window.threeScene.clear();
-          window.threeScene = null;
-        } catch (e) {
-          console.warn('Error cleaning up Three.js scene:', e);
-        }
-      }
-      window.threeCamera = null;
     };
   }, []);
 
@@ -57,16 +40,16 @@ const AnimationCanvas: React.FC<AnimationCanvasProps> = ({
       setCanvasError('');
       
       try {
-        console.log('Running Three.js animation with code length:', code.length);
+        console.log('Running p5.js animation with code length:', code.length);
         
-        // Run the Three.js sketch
-        runThreeSketch(code, sketchContainerRef.current, (errorMsg: string) => {
-          console.error('Three.js animation error:', errorMsg);
+        // Run the p5.js sketch
+        runP5Sketch(code, sketchContainerRef.current, (errorMsg: string) => {
+          console.error('p5.js animation error:', errorMsg);
           setCanvasError(errorMsg);
         });
       } catch (e) {
         const errorMessage = e instanceof Error ? e.message : String(e);
-        console.error('Error running Three.js animation:', errorMessage);
+        console.error('Error running p5.js animation:', errorMessage);
         setCanvasError(errorMessage);
       }
     }
