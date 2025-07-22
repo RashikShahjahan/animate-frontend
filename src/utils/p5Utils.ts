@@ -227,7 +227,7 @@ export const runP5Sketch = (sketchCode: string, container: HTMLDivElement, onErr
           // Execute user code to capture their functions
           try {
             console.log('Executing user code (length: ${finalSketchCode.length} chars)');
-            console.log('User code preview:', \`${finalSketchCode}\`.substring(0, 200) + '...');
+            console.log('User code preview:', \`${finalSketchCode.substring(0, 200)}...\`);
             
             ${finalSketchCode}
             
