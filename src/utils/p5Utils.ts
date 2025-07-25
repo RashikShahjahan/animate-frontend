@@ -13,6 +13,14 @@ export const preprocessP5Code = (code: string): string => {
   // Fix common syntax errors
   let fixedCode = code;
   
+  // Remove canvas variable assignment since createCanvas doesn't return a canvas object in instance mode
+  // Replace: let canvas = createCanvas(...); with just: createCanvas(...);
+  fixedCode = fixedCode.replace(/(\s*)(?:let|var|const)\s+canvas\s*=\s*createCanvas\([^)]*\);/g, '$1createCanvas(windowWidth, windowHeight);');
+  
+  // Remove or comment out canvas.parent() calls since we're using instance mode
+  // and the canvas is already being attached to the correct container
+  fixedCode = fixedCode.replace(/(\s*).*\.parent\([^)]*\);?\s*/g, '$1// Canvas parent handled by instance mode\n');
+  
   // Fix missing closing brackets in array access with property assignment
   // e.g., array[i.property = value; -> array[i].property = value;
   fixedCode = fixedCode.replace(/(\w+)\[(\w+)\.(\w+)\s*(\+|-|\*|\/|)=\s*([^;]+);/g, 
@@ -24,14 +32,27 @@ export const preprocessP5Code = (code: string): string => {
   const processedLines = [];
   const declaredVars = new Set();
   
-  // First pass: collect already declared variables
+  // First pass: collect already declared variables and function names
   for (const line of lines) {
+    // Look for let/var/const declarations
     const letMatch = line.match(/(?:let|var|const)\s+([a-zA-Z_$][a-zA-Z0-9_$]*)/g);
     if (letMatch) {
       letMatch.forEach(match => {
         const varName = match.replace(/(?:let|var|const)\s+/, '');
         declaredVars.add(varName);
       });
+    }
+    
+    // Look for function declarations
+    const funcMatch = line.match(/function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)/);
+    if (funcMatch) {
+      declaredVars.add(funcMatch[1]);
+    }
+    
+    // Look for array declarations like: let arrayName = [];
+    const arrayMatch = line.match(/(?:let|var|const)\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*=\s*\[/);
+    if (arrayMatch) {
+      declaredVars.add(arrayMatch[1]);
     }
   }
   
@@ -46,7 +67,9 @@ export const preprocessP5Code = (code: string): string => {
         !line.includes('let ') && 
         !line.includes('var ') && 
         !line.includes('const ') &&
-        !declaredVars.has(assignmentMatch[1])) {
+        !declaredVars.has(assignmentMatch[1]) &&
+        // Don't add let to p5.js function names
+        !['setup', 'draw', 'mousePressed', 'mouseReleased', 'keyPressed', 'keyReleased', 'windowResized'].includes(assignmentMatch[1])) {
       
       // Add let declaration
       processedLine = line.replace(/^(\s*)([a-zA-Z_$][a-zA-Z0-9_$]*\s*=)/, '$1let $2');
@@ -91,7 +114,13 @@ export const runP5Sketch = (sketchCode: string, container: HTMLDivElement, onErr
   
   try {
     // Preprocess sketch code to fix common syntax errors
+    console.log('Original sketch code length:', sketchCode.length);
+    console.log('Original sketch code preview:', sketchCode.substring(0, 200));
+    
     sketchCode = preprocessP5Code(sketchCode);
+    
+    console.log('Preprocessed sketch code length:', sketchCode.length);
+    console.log('Preprocessed sketch code preview:', sketchCode.substring(0, 200));
     
     // Use the existing container ID or assign 'animation-container' as default
     const containerId = container.id || 'animation-container';
