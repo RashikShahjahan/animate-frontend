@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { runP5Sketch } from '../utils/p5Utils';
+import { runP5Sketch, cleanupP5Instance } from '../utils/p5Utils';
 
 interface AnimationCanvasProps {
   isLoading: boolean;
@@ -22,26 +22,7 @@ const AnimationCanvas: React.FC<AnimationCanvasProps> = ({
   // Clean up any previous p5.js instance when component unmounts
   useEffect(() => {
     return () => {
-      if (window.p5Instance) {
-        try {
-          window.p5Instance.remove();
-          window.p5Instance = null;
-          
-          // Clean up global variables to prevent conflicts
-          const globalVarsToClean = ['width', 'height', 'mouseX', 'mouseY', 'frameCount', 'windowWidth', 'windowHeight'];
-          globalVarsToClean.forEach(varName => {
-            try {
-              if ((window as any).hasOwnProperty(varName)) {
-                delete (window as any)[varName];
-              }
-            } catch (e) {
-              // Some properties might be non-configurable, ignore errors
-            }
-          });
-        } catch (e) {
-          console.warn('Error cleaning up p5.js animation:', e);
-        }
-      }
+      cleanupP5Instance();
     };
   }, []);
 
