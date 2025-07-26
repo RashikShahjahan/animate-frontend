@@ -8,6 +8,17 @@ export interface AnimationRequest {
 
 export interface AnimationResponse {
   code: string;
+  metadata?: {
+    functions?: { [key: string]: boolean };
+    hasSetup?: boolean;
+    hasDraw?: boolean;
+    hasInteraction?: boolean;
+    hasCanvas?: boolean;
+    canvasWidth?: string;
+    canvasHeight?: string;
+    errors?: string[];
+    isValid?: boolean;
+  };
   error?: string;
 }
 

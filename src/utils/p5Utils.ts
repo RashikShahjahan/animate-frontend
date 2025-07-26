@@ -7,81 +7,12 @@ declare global {
 }
 
 /**
- * Helper function to fix common syntax errors in p5 sketch code
+ * Note: Preprocessing is now handled on the backend for better reliability
+ * This function is kept for backwards compatibility but is no longer used
  */
 export const preprocessP5Code = (code: string): string => {
-  // Fix common syntax errors
-  let fixedCode = code;
-  
-  // Remove canvas variable assignment since createCanvas doesn't return a canvas object in instance mode
-  // Replace: let canvas = createCanvas(...); with just: createCanvas(...);
-  fixedCode = fixedCode.replace(/(\s*)(?:let|var|const)\s+canvas\s*=\s*createCanvas\([^)]*\);/g, '$1createCanvas(windowWidth, windowHeight);');
-  
-  // Remove or comment out canvas.parent() calls since we're using instance mode
-  // and the canvas is already being attached to the correct container
-  fixedCode = fixedCode.replace(/(\s*).*\.parent\([^)]*\);?\s*/g, '$1// Canvas parent handled by instance mode\n');
-  
-  // Fix missing closing brackets in array access with property assignment
-  // e.g., array[i.property = value; -> array[i].property = value;
-  fixedCode = fixedCode.replace(/(\w+)\[(\w+)\.(\w+)\s*(\+|-|\*|\/|)=\s*([^;]+);/g, 
-                               "$1[$2].$3 $4= $5;");
-  
-  // Fix global variable declarations without let/var/const
-  // Look for variable assignments that aren't already declared
-  const lines = fixedCode.split('\n');
-  const processedLines = [];
-  const declaredVars = new Set();
-  
-  // First pass: collect already declared variables and function names
-  for (const line of lines) {
-    // Look for let/var/const declarations
-    const letMatch = line.match(/(?:let|var|const)\s+([a-zA-Z_$][a-zA-Z0-9_$]*)/g);
-    if (letMatch) {
-      letMatch.forEach(match => {
-        const varName = match.replace(/(?:let|var|const)\s+/, '');
-        declaredVars.add(varName);
-      });
-    }
-    
-    // Look for function declarations
-    const funcMatch = line.match(/function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)/);
-    if (funcMatch) {
-      declaredVars.add(funcMatch[1]);
-    }
-    
-    // Look for array declarations like: let arrayName = [];
-    const arrayMatch = line.match(/(?:let|var|const)\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*=\s*\[/);
-    if (arrayMatch) {
-      declaredVars.add(arrayMatch[1]);
-    }
-  }
-  
-  // Second pass: fix undeclared variables
-  for (const line of lines) {
-    let processedLine = line;
-    
-    // Look for variable assignments that aren't function declarations or already declared
-    const assignmentMatch = line.match(/^\s*([a-zA-Z_$][a-zA-Z0-9_$]*)\s*=/);
-    if (assignmentMatch && 
-        !line.includes('function') && 
-        !line.includes('let ') && 
-        !line.includes('var ') && 
-        !line.includes('const ') &&
-        !declaredVars.has(assignmentMatch[1]) &&
-        // Don't add let to p5.js function names
-        !['setup', 'draw', 'mousePressed', 'mouseReleased', 'keyPressed', 'keyReleased', 'windowResized'].includes(assignmentMatch[1])) {
-      
-      // Add let declaration
-      processedLine = line.replace(/^(\s*)([a-zA-Z_$][a-zA-Z0-9_$]*\s*=)/, '$1let $2');
-      declaredVars.add(assignmentMatch[1]);
-    }
-    
-    processedLines.push(processedLine);
-  }
-  
-  fixedCode = processedLines.join('\n');
-  
-  return fixedCode;
+  // Preprocessing is now done on the backend
+  return code;
 };
 
 export const runP5Sketch = (sketchCode: string, container: HTMLDivElement, onError: (error: string) => void): void => {
@@ -113,14 +44,9 @@ export const runP5Sketch = (sketchCode: string, container: HTMLDivElement, onErr
   }
   
   try {
-    // Preprocess sketch code to fix common syntax errors
-    console.log('Original sketch code length:', sketchCode.length);
-    console.log('Original sketch code preview:', sketchCode.substring(0, 200));
-    
-    sketchCode = preprocessP5Code(sketchCode);
-    
-    console.log('Preprocessed sketch code length:', sketchCode.length);
-    console.log('Preprocessed sketch code preview:', sketchCode.substring(0, 200));
+    // Code is now preprocessed on the backend for better reliability
+    console.log('Received p5.js code length:', sketchCode.length);
+    console.log('Code preview:', sketchCode.substring(0, 200));
     
     // Use the existing container ID or assign 'animation-container' as default
     const containerId = container.id || 'animation-container';
@@ -252,13 +178,43 @@ export const runP5Sketch = (sketchCode: string, container: HTMLDivElement, onErr
           let userSetup = null;
           let userDraw = null;
           let userWindowResized = null;
+          let userMousePressed = null;
+          let userMouseReleased = null;
+          let userKeyPressed = null;
+          let userKeyReleased = null;
           
           // Execute user code to capture their functions
           try {
             console.log('Executing user code (length: ${finalSketchCode.length} chars)');
             console.log('User code preview:', \`${finalSketchCode.substring(0, 200)}...\`);
             
-            ${finalSketchCode}
+            // Execute user code and capture functions using eval to access the local scope
+            eval(\`
+              ${finalSketchCode}
+              
+              // Explicitly attach functions to window if they exist in local scope
+              if (typeof setup === 'function') {
+                window.setup = setup;
+              }
+              if (typeof draw === 'function') {
+                window.draw = draw;
+              }
+              if (typeof windowResized === 'function') {
+                window.windowResized = windowResized;
+              }
+              if (typeof mousePressed === 'function') {
+                window.mousePressed = mousePressed;
+              }
+              if (typeof mouseReleased === 'function') {
+                window.mouseReleased = mouseReleased;
+              }
+              if (typeof keyPressed === 'function') {
+                window.keyPressed = keyPressed;
+              }
+              if (typeof keyReleased === 'function') {
+                window.keyReleased = keyReleased;
+              }
+            \`);
             
             // Capture user-defined functions
             if (typeof window.setup === 'function') {
@@ -276,6 +232,22 @@ export const runP5Sketch = (sketchCode: string, container: HTMLDivElement, onErr
             if (typeof window.windowResized === 'function') {
               userWindowResized = window.windowResized;
               console.log('Found user windowResized function');
+            }
+            if (typeof window.mousePressed === 'function') {
+              userMousePressed = window.mousePressed;
+              console.log('Found user mousePressed function');
+            }
+            if (typeof window.mouseReleased === 'function') {
+              userMouseReleased = window.mouseReleased;
+              console.log('Found user mouseReleased function');
+            }
+            if (typeof window.keyPressed === 'function') {
+              userKeyPressed = window.keyPressed;
+              console.log('Found user keyPressed function');
+            }
+            if (typeof window.keyReleased === 'function') {
+              userKeyReleased = window.keyReleased;
+              console.log('Found user keyReleased function');
             }
           } catch (userCodeError) {
             console.error('Error in user p5.js code:', userCodeError);
@@ -333,6 +305,48 @@ export const runP5Sketch = (sketchCode: string, container: HTMLDivElement, onErr
               }
             } catch (resizeError) {
               console.warn('Error in windowResized:', resizeError);
+            }
+          };
+          
+          // Mouse event handlers
+          p.mousePressed = function() {
+            try {
+              if (userMousePressed) {
+                userMousePressed();
+              }
+            } catch (mouseError) {
+              console.warn('Error in mousePressed:', mouseError);
+            }
+          };
+          
+          p.mouseReleased = function() {
+            try {
+              if (userMouseReleased) {
+                userMouseReleased();
+              }
+            } catch (mouseError) {
+              console.warn('Error in mouseReleased:', mouseError);
+            }
+          };
+          
+          // Key event handlers
+          p.keyPressed = function() {
+            try {
+              if (userKeyPressed) {
+                userKeyPressed();
+              }
+            } catch (keyError) {
+              console.warn('Error in keyPressed:', keyError);
+            }
+          };
+          
+          p.keyReleased = function() {
+            try {
+              if (userKeyReleased) {
+                userKeyReleased();
+              }
+            } catch (keyError) {
+              console.warn('Error in keyReleased:', keyError);
             }
           };
           

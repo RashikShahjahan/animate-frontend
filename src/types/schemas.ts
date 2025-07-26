@@ -11,6 +11,17 @@ export const AnimationRequestSchema = z.object({
 
 export const AnimationResponseSchema = z.object({
   code: z.string().min(1, 'Animation code is required'),
+  metadata: z.object({
+    functions: z.record(z.boolean()).optional(),
+    hasSetup: z.boolean().optional(),
+    hasDraw: z.boolean().optional(),
+    hasInteraction: z.boolean().optional(),
+    hasCanvas: z.boolean().optional(),
+    canvasWidth: z.string().optional(),
+    canvasHeight: z.string().optional(),
+    errors: z.array(z.string()).optional(),
+    isValid: z.boolean().optional()
+  }).optional(),
   error: z.string().optional()
 });
 
