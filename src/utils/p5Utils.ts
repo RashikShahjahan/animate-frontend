@@ -80,7 +80,7 @@ export const runP5Sketch = (sketchCode: string, container: HTMLDivElement, onErr
       finalSketchCode = sketchCode;
     }
     
-    // Create the script to execute
+    // Create the script to execute - using global mode for simplicity
     const scriptElement = document.createElement('script');
     scriptElement.textContent = `
       try {
@@ -91,264 +91,26 @@ export const runP5Sketch = (sketchCode: string, container: HTMLDivElement, onErr
             console.warn('Error removing existing p5 instance:', e);
           }
           window.p5Instance = null;
-          
-          // Clean up global variables
-          const globalVarsToClean = ['width', 'height', 'mouseX', 'mouseY', 'frameCount', 'windowWidth', 'windowHeight'];
-          globalVarsToClean.forEach(varName => {
-            try {
-              if (window.hasOwnProperty(varName)) {
-                delete window[varName];
-              }
-            } catch (e) {
-              // Some properties might be non-configurable, ignore errors
-            }
-          });
         }
         
-        window.p5Instance = new window.p5(function(p) {
-          // Store original canvas dimensions
+        // Use global mode - much simpler, all p5 functions automatically available
+        window.p5Instance = new window.p5(function() {
+          // Store canvas dimensions for resize handling
           let originalWidth, originalHeight;
           
-          // Override p5.js global functions to work in instance mode
-          const globalFunctions = [
-            'createCanvas', 'background', 'fill', 'stroke', 'noStroke', 'noFill',
-            'strokeWeight', 'rect', 'ellipse', 'line', 'point', 'triangle',
-            'quad', 'arc', 'circle', 'square', 'textAlign', 'textSize', 'text',
-            'random', 'floor', 'ceil', 'round', 'abs', 'min', 'max', 'map',
-            'noise', 'sin', 'cos', 'tan', 'atan2', 'degrees', 'radians',
-            'push', 'pop', 'translate', 'rotate', 'scale', 'frameRate',
-            'mousePressed', 'mouseReleased', 'keyPressed', 'keyReleased',
-            'resizeCanvas', 'windowResized', 'draw', 'setup', 'constrain',
-            'lerpColor', 'color', 'red', 'green', 'blue', 'alpha', 'hue',
-            'saturation', 'brightness', 'colorMode', 'lerp', 'dist', 'mag',
-            'pow', 'sqrt', 'log', 'exp'
-          ];
-          
-          // Create global references to p5 instance methods
-          globalFunctions.forEach(funcName => {
-            if (typeof p[funcName] === 'function') {
-              window[funcName] = p[funcName].bind(p);
-            }
-          });
-          
-          // Global variables - safely define only if not already defined
-          const safeDefineProperty = (obj, prop, descriptor) => {
-            try {
-              if (!obj.hasOwnProperty(prop) || obj.propertyIsEnumerable(prop)) {
-                Object.defineProperty(obj, prop, descriptor);
-              } else {
-                // If property exists and is non-configurable, assign directly
-                obj[prop] = descriptor.get ? descriptor.get() : descriptor.value;
-              }
-            } catch (e) {
-              // Fallback: assign directly to window
-              try {
-                obj[prop] = descriptor.get ? descriptor.get() : descriptor.value;
-              } catch (fallbackError) {
-                console.warn('Could not define property', prop, fallbackError);
-              }
-            }
-          };
-          
-          safeDefineProperty(window, 'width', { get: () => p.width, configurable: true });
-          safeDefineProperty(window, 'height', { get: () => p.height, configurable: true });
-          safeDefineProperty(window, 'mouseX', { get: () => p.mouseX, configurable: true });
-          safeDefineProperty(window, 'mouseY', { get: () => p.mouseY, configurable: true });
-          safeDefineProperty(window, 'frameCount', { get: () => p.frameCount, configurable: true });
-          safeDefineProperty(window, 'windowWidth', { get: () => window.innerWidth, configurable: true });
-          safeDefineProperty(window, 'windowHeight', { get: () => window.innerHeight, configurable: true });
-          
-          // Constants
-          window.CENTER = p.CENTER;
-          window.LEFT = p.LEFT;
-          window.RIGHT = p.RIGHT;
-          window.TOP = p.TOP;
-          window.BOTTOM = p.BOTTOM;
-          window.CORNER = p.CORNER;
-          window.CORNERS = p.CORNERS;
-          window.RADIUS = p.RADIUS;
-          
-          // Math constants
-          window.PI = p.PI;
-          window.TWO_PI = p.TWO_PI;
-          window.HALF_PI = p.HALF_PI;
-          window.QUARTER_PI = p.QUARTER_PI;
-          
-          // Store original setup method if it exists in user code
-          let userSetup = null;
-          let userDraw = null;
-          let userWindowResized = null;
-          let userMousePressed = null;
-          let userMouseReleased = null;
-          let userKeyPressed = null;
-          let userKeyReleased = null;
-          
-          // Execute user code to capture their functions
+          // Execute user code directly - global mode handles everything automatically
           try {
-            console.log('Executing user code (length: ${finalSketchCode.length} chars)');
-            console.log('User code preview:', \`${finalSketchCode.substring(0, 200)}...\`);
+            console.log('Executing user code in global mode (length: ${finalSketchCode.length} chars)');
+            console.log('Code preview:', \`${finalSketchCode.substring(0, 200)}...\`);
             
-            // Execute user code and capture functions using eval to access the local scope
-            eval(\`
-              ${finalSketchCode}
-              
-              // Explicitly attach functions to window if they exist in local scope
-              if (typeof setup === 'function') {
-                window.setup = setup;
-              }
-              if (typeof draw === 'function') {
-                window.draw = draw;
-              }
-              if (typeof windowResized === 'function') {
-                window.windowResized = windowResized;
-              }
-              if (typeof mousePressed === 'function') {
-                window.mousePressed = mousePressed;
-              }
-              if (typeof mouseReleased === 'function') {
-                window.mouseReleased = mouseReleased;
-              }
-              if (typeof keyPressed === 'function') {
-                window.keyPressed = keyPressed;
-              }
-              if (typeof keyReleased === 'function') {
-                window.keyReleased = keyReleased;
-              }
-            \`);
+            // Simply execute the user code - p5.js global mode will handle setup/draw automatically
+            eval(\`${finalSketchCode}\`);
             
-            // Capture user-defined functions
-            if (typeof window.setup === 'function') {
-              userSetup = window.setup;
-              console.log('Found user setup function');
-            } else {
-              console.log('No user setup function found');
-            }
-            if (typeof window.draw === 'function') {
-              userDraw = window.draw;
-              console.log('Found user draw function');
-            } else {
-              console.log('No user draw function found');
-            }
-            if (typeof window.windowResized === 'function') {
-              userWindowResized = window.windowResized;
-              console.log('Found user windowResized function');
-            }
-            if (typeof window.mousePressed === 'function') {
-              userMousePressed = window.mousePressed;
-              console.log('Found user mousePressed function');
-            }
-            if (typeof window.mouseReleased === 'function') {
-              userMouseReleased = window.mouseReleased;
-              console.log('Found user mouseReleased function');
-            }
-            if (typeof window.keyPressed === 'function') {
-              userKeyPressed = window.keyPressed;
-              console.log('Found user keyPressed function');
-            }
-            if (typeof window.keyReleased === 'function') {
-              userKeyReleased = window.keyReleased;
-              console.log('Found user keyReleased function');
-            }
+            console.log('User code executed successfully');
           } catch (userCodeError) {
             console.error('Error in user p5.js code:', userCodeError);
             throw userCodeError;
           }
-          
-          // Setup method
-          p.setup = function() {
-            try {
-              console.log('p5.js setup starting...');
-              if (userSetup) {
-                console.log('Running user setup function');
-                userSetup();
-              } else {
-                console.log('No user setup found, creating default canvas');
-                p.createCanvas(${containerWidth}, ${containerHeight});
-              }
-              
-              originalWidth = p.width || ${containerWidth};
-              originalHeight = p.height || ${containerHeight};
-              console.log('Setup completed, canvas size:', originalWidth, 'x', originalHeight);
-            } catch (setupError) {
-              console.error('Error in p5.js setup:', setupError);
-              throw setupError;
-            }
-          };
-          
-          // Draw method
-          p.draw = function() {
-            try {
-              if (userDraw) {
-                userDraw();
-              } else {
-                console.warn('No user draw function found - animation may appear blank');
-              }
-            } catch (drawError) {
-              console.error('Error in p5.js draw:', drawError);
-              // Don't rethrow draw errors to prevent animation from stopping
-            }
-          };
-          
-          // Window resize handling
-          p.windowResized = function() {
-            try {
-              if (userWindowResized) {
-                userWindowResized();
-              } else {
-                // Default resize behavior
-                const container = document.getElementById('${containerId}');
-                if (container && originalWidth && originalHeight) {
-                  const containerWidth = container.clientWidth;
-                  const containerHeight = container.clientHeight;
-                  p.resizeCanvas(containerWidth, containerHeight);
-                }
-              }
-            } catch (resizeError) {
-              console.warn('Error in windowResized:', resizeError);
-            }
-          };
-          
-          // Mouse event handlers
-          p.mousePressed = function() {
-            try {
-              if (userMousePressed) {
-                userMousePressed();
-              }
-            } catch (mouseError) {
-              console.warn('Error in mousePressed:', mouseError);
-            }
-          };
-          
-          p.mouseReleased = function() {
-            try {
-              if (userMouseReleased) {
-                userMouseReleased();
-              }
-            } catch (mouseError) {
-              console.warn('Error in mouseReleased:', mouseError);
-            }
-          };
-          
-          // Key event handlers
-          p.keyPressed = function() {
-            try {
-              if (userKeyPressed) {
-                userKeyPressed();
-              }
-            } catch (keyError) {
-              console.warn('Error in keyPressed:', keyError);
-            }
-          };
-          
-          p.keyReleased = function() {
-            try {
-              if (userKeyReleased) {
-                userKeyReleased();
-              }
-            } catch (keyError) {
-              console.warn('Error in keyReleased:', keyError);
-            }
-          };
           
         }, '${containerId}');
       } catch (e) {

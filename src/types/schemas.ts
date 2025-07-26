@@ -19,6 +19,9 @@ export const AnimationResponseSchema = z.object({
     hasCanvas: z.boolean().optional(),
     canvasWidth: z.string().optional(),
     canvasHeight: z.string().optional(),
+    usesShapes: z.boolean().optional(),
+    uses3D: z.boolean().optional(),
+    usesImages: z.boolean().optional(),
     errors: z.array(z.string()).optional(),
     isValid: z.boolean().optional()
   }).optional(),

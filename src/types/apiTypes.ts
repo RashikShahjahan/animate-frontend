@@ -16,6 +16,9 @@ export interface AnimationResponse {
     hasCanvas?: boolean;
     canvasWidth?: string;
     canvasHeight?: string;
+    usesShapes?: boolean;
+    uses3D?: boolean;
+    usesImages?: boolean;
     errors?: string[];
     isValid?: boolean;
   };
