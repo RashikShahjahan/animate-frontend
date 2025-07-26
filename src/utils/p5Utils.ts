@@ -24,18 +24,6 @@ export const runP5Sketch = (sketchCode: string, container: HTMLDivElement, onErr
       console.warn('Error while removing previous p5 instance:', e);
     }
     window.p5Instance = null;
-    
-    // Clean up global variables to prevent conflicts
-    const globalVarsToClean = ['width', 'height', 'mouseX', 'mouseY', 'frameCount', 'windowWidth', 'windowHeight'];
-    globalVarsToClean.forEach(varName => {
-      try {
-        if (window.hasOwnProperty(varName)) {
-          delete window[varName as any];
-        }
-      } catch (e) {
-        // Some properties might be non-configurable, ignore errors
-      }
-    });
   }
   
   // Clear the container
@@ -44,22 +32,12 @@ export const runP5Sketch = (sketchCode: string, container: HTMLDivElement, onErr
   }
   
   try {
-    // Code is now preprocessed on the backend for better reliability
-    console.log('Received p5.js code length:', sketchCode.length);
+    console.log('Running p5.js animation with code length:', sketchCode.length);
     console.log('Code preview:', sketchCode.substring(0, 200));
     
     // Use the existing container ID or assign 'animation-container' as default
     const containerId = container.id || 'animation-container';
     container.id = containerId;
-    
-    // Get container dimensions
-    const containerWidth = container.clientWidth || 400;
-    const containerHeight = container.clientHeight || 300;
-    
-    // Make sure we have valid dimensions
-    if (containerWidth <= 0 || containerHeight <= 0) {
-      console.warn('Container has invalid dimensions, using defaults');
-    }
     
     // Check if the code is already wrapped in the p5 constructor format
     const isWrappedFormat = sketchCode.includes('new p5(function(p)') || sketchCode.includes('new p5((p)');
@@ -80,85 +58,94 @@ export const runP5Sketch = (sketchCode: string, container: HTMLDivElement, onErr
       finalSketchCode = sketchCode;
     }
     
-    // Create the script to execute - using global mode for simplicity
-    const scriptElement = document.createElement('script');
-    scriptElement.textContent = `
-      try {
-        if (window.p5Instance) {
+    // Create a safer execution environment
+    try {
+             // Create the p5 instance with proper instance mode but bind to global scope
+       window.p5Instance = new (window as any).p5((p: any) => {
+         console.log('Setting up p5 instance');
+         
+         // Make all p5 functions globally available by binding them to window
+         Object.getOwnPropertyNames(p).forEach(prop => {
+           if (typeof p[prop] === 'function' && !prop.startsWith('_')) {
+             try {
+               (window as any)[prop] = p[prop].bind(p);
+             } catch (e) {
+               // Some properties might not be bindable, that's okay
+             }
+           }
+         });
+         
+         // Also bind important p5 properties as getters
+         const dynamicProps = ['width', 'height', 'mouseX', 'mouseY', 'pmouseX', 'pmouseY', 'frameCount', 'windowWidth', 'windowHeight'];
+         dynamicProps.forEach(prop => {
+           if (p.hasOwnProperty(prop) || prop in p) {
+             Object.defineProperty(window, prop, {
+               get: () => p[prop],
+               configurable: true,
+               enumerable: true
+             });
+           }
+         });
+         
+         // Bind important constants
+         const constants = ['TWO_PI', 'PI', 'HALF_PI', 'QUARTER_PI', 'CENTER', 'CORNER', 'CORNERS', 'RADIUS'];
+         constants.forEach(constant => {
+           if (p[constant] !== undefined) {
+             (window as any)[constant] = p[constant];
+           }
+         });
+         
+         // Execute the user code in global context
+         try {
+           console.log('Executing user code with', finalSketchCode.length, 'characters');
+           
+           // Use eval to execute the code in the global context where all p5 functions are available
+           eval(finalSketchCode);
+           
+           console.log('User code executed successfully');
+         } catch (userCodeError) {
+           console.error('Error in user p5.js code:', userCodeError);
+           onError('Error in animation code: ' + (userCodeError instanceof Error ? userCodeError.message : String(userCodeError)));
+         }
+       }, containerId);
+      
+      // Add window resize event listener
+      const resizeHandler = () => {
+        if (window.p5Instance && typeof window.p5Instance.windowResized === 'function') {
           try {
-            window.p5Instance.remove();
+            window.p5Instance.windowResized();
           } catch (e) {
-            console.warn('Error removing existing p5 instance:', e);
+            console.warn('Error in resize handler:', e);
           }
-          window.p5Instance = null;
         }
-        
-        // Use global mode - much simpler, all p5 functions automatically available
-        window.p5Instance = new window.p5(function() {
-          // Store canvas dimensions for resize handling
-          let originalWidth, originalHeight;
-          
-          // Execute user code directly - global mode handles everything automatically
-          try {
-            console.log('Executing user code in global mode (length: ${finalSketchCode.length} chars)');
-            console.log('Code preview:', \`${finalSketchCode.substring(0, 200)}...\`);
-            
-            // Simply execute the user code - p5.js global mode will handle setup/draw automatically
-            eval(\`${finalSketchCode}\`);
-            
-            console.log('User code executed successfully');
-          } catch (userCodeError) {
-            console.error('Error in user p5.js code:', userCodeError);
-            throw userCodeError;
-          }
-          
-        }, '${containerId}');
-      } catch (e) {
-        console.error('Error in p5.js sketch execution:', e);
-        throw e;
-      }
-    `;
-    
-    container.appendChild(scriptElement);
-    
-    // Add window resize event listener
-    const resizeHandler = () => {
-      if (window.p5Instance && typeof window.p5Instance.windowResized === 'function') {
-        try {
-          window.p5Instance.windowResized();
-        } catch (e) {
-          console.warn('Error in resize handler:', e);
+      };
+      
+      window.addEventListener('resize', resizeHandler);
+      
+      // Check if canvas was created
+      setTimeout(() => {
+        const canvas = container.querySelector('canvas');
+        if (!canvas) {
+          console.warn('No canvas found after running p5.js sketch');
+          console.log('Container contents:', container.innerHTML);
+          console.log('p5 instance state:', window.p5Instance ? 'exists' : 'missing');
+          onError('Animation failed to render. Please try regenerating the animation.');
+        } else {
+          console.log('Canvas successfully created:', canvas);
+          // Style the canvas for responsive behavior
+          canvas.style.width = 'auto';
+          canvas.style.height = 'auto';
+          canvas.style.maxWidth = '100%';
+          canvas.style.maxHeight = '100%';
+          canvas.style.margin = '0 auto';
+          canvas.style.display = 'block';
         }
-      }
-    };
-    
-    window.addEventListener('resize', resizeHandler);
-    
-    // Check if canvas was created
-    setTimeout(() => {
-      const canvas = container.querySelector('canvas');
-      if (!canvas) {
-        console.warn('No canvas found after running p5.js sketch');
-        console.log('Container contents:', container.innerHTML);
-        console.log('p5 instance state:', window.p5Instance ? 'exists' : 'missing');
-        onError('Animation failed to render. Please try regenerating the animation.');
-      } else {
-        console.log('Canvas successfully created:', canvas);
-        // Style the canvas for responsive behavior
-        canvas.style.width = 'auto';
-        canvas.style.height = 'auto';
-        canvas.style.maxWidth = '100%';
-        canvas.style.maxHeight = '100%';
-        canvas.style.margin = '0 auto';
-        canvas.style.display = 'block';
-      }
-    }, 1000);
-    
-    // Handle script load errors
-    scriptElement.onerror = (event) => {
-      console.error('Script loading error:', event);
-      onError('Failed to load animation script');
-    };
+      }, 500);
+      
+    } catch (executionError) {
+      console.error('Error during p5.js execution:', executionError);
+      onError('Failed to execute animation: ' + (executionError instanceof Error ? executionError.message : String(executionError)));
+    }
     
   } catch (err) {
     console.error('Error running p5.js sketch:', err);
