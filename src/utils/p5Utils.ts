@@ -139,7 +139,7 @@ export const runP5Sketch = (sketchCode: string, container: HTMLDivElement, onErr
         P5_DYNAMIC_PROPS.forEach(prop => {
           if (p.hasOwnProperty(prop) || prop in p) {
             Object.defineProperty(window, prop, {
-              get: () => p[prop],
+              get: () => p[prop] || (prop === 'windowWidth' ? window.innerWidth : prop === 'windowHeight' ? window.innerHeight : undefined),
               set: (value) => { p[prop] = value; }, // Allow setting for some properties
               configurable: true,
               enumerable: true
@@ -166,6 +166,10 @@ export const runP5Sketch = (sketchCode: string, container: HTMLDivElement, onErr
         // Execute the user code in global context
         try {
           console.log('Executing user code with', finalSketchCode.length, 'characters');
+          
+          // Ensure windowWidth and windowHeight are available before executing user code
+          (window as any).windowWidth = p.windowWidth || window.innerWidth;
+          (window as any).windowHeight = p.windowHeight || window.innerHeight;
           
           // Use eval to execute the code in the global context where all p5 functions are available
           eval(finalSketchCode);
@@ -197,9 +201,11 @@ export const runP5Sketch = (sketchCode: string, container: HTMLDivElement, onErr
           console.warn('No canvas or SVG found after running p5.js sketch');
           console.log('Container contents:', container.innerHTML);
           console.log('p5 instance state:', window.p5Instance ? 'exists' : 'missing');
+          console.log('Available functions:', Object.keys(window).filter(key => typeof (window as any)[key] === 'function' && key.includes('create')));
           onError('Animation failed to render. Please try regenerating the animation.');
         } else {
           console.log('Render element successfully created:', canvas.tagName);
+          console.log('Canvas dimensions:', canvas.getAttribute('width'), 'x', canvas.getAttribute('height'));
           // Style the canvas/svg for responsive behavior
           if (canvas.tagName === 'CANVAS') {
             canvas.style.width = 'auto';
